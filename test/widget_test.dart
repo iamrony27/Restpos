@@ -183,5 +183,26 @@ void main() {
     await tester.pump();
     expect(find.text('Operation completed successfully'), findsNothing);
   });
+
+  testWidgets('Center FAB navigates directly to POS screen without modal', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    await tester.pumpWidget(const RestaurantPosApp());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final addIcon = find.byIcon(Icons.add_rounded);
+    expect(addIcon, findsOneWidget);
+
+    await tester.tap(addIcon);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // Must show POS screen and NOT show Quick Actions modal
+    expect(find.text('Quick Actions'), findsNothing);
+    expect(find.text('POS Billing'), findsOneWidget);
+  });
 }
 

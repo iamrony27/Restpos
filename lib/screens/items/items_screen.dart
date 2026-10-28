@@ -8,58 +8,85 @@ import '../../models/menu_item.dart';
 import '../../providers/menu_provider.dart';
 import '../../widgets/dietary_badge.dart';
 
-Widget _buildDishImage(String? uri, {required double height, double width = double.infinity, BoxFit fit = BoxFit.cover, double? cacheWidth}) {
-  if (uri == null || uri.isEmpty) {
+Widget _buildDishImage(
+  String? uri, {
+  required double height,
+  double width = double.infinity,
+  BoxFit fit = BoxFit.cover,
+  double? cacheWidth,
+}) {
+  Widget placeholder(IconData icon) {
     return Container(
       height: height,
       width: width,
-      color: Colors.grey.shade200,
-      child: const Icon(Icons.restaurant_rounded, color: Colors.grey),
+      decoration: const BoxDecoration(
+        color: Color(0xFF231B17),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF2C221D),
+            Color(0xFF1B1513),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Icon(icon, color: CulinaryColors.flameOrange.withOpacity(0.65), size: 28),
+      ),
     );
   }
+
+  if (uri == null || uri.isEmpty) {
+    return placeholder(Icons.restaurant_rounded);
+  }
+
+  Widget img;
   if (uri.startsWith('/') || uri.startsWith('file://')) {
     final filePath = uri.replaceFirst('file://', '');
-    return Image.file(
+    img = Image.file(
       File(filePath),
       height: height,
       width: width,
       fit: fit,
-      errorBuilder: (_, __, ___) => Container(
-        height: height,
-        width: width,
-        color: Colors.grey.shade200,
-        child: const Icon(Icons.broken_image_rounded, color: Colors.grey),
-      ),
+      errorBuilder: (_, __, ___) => placeholder(Icons.broken_image_rounded),
     );
-  }
-  if (uri.startsWith('http://') || uri.startsWith('https://')) {
-    return Image.network(
+  } else if (uri.startsWith('http://') || uri.startsWith('https://')) {
+    img = Image.network(
       uri,
       height: height,
       width: width,
       fit: fit,
-      errorBuilder: (_, __, ___) => Container(
-        height: height,
-        width: width,
-        color: Colors.grey.shade200,
-        child: const Icon(Icons.broken_image_rounded, color: Colors.grey),
-      ),
+      errorBuilder: (_, __, ___) => placeholder(Icons.broken_image_rounded),
     );
-  }
-  return Image.asset(
-    uri,
-    height: height,
-    width: width,
-    fit: fit,
-    cacheWidth: cacheWidth?.toInt() ?? 360,
-    errorBuilder: (_, __, ___) => Container(
+  } else {
+    img = Image.asset(
+      uri,
       height: height,
       width: width,
-      color: Colors.grey.shade200,
-      child: const Icon(Icons.restaurant_rounded, color: Colors.grey),
+      fit: fit,
+      cacheWidth: cacheWidth?.toInt() ?? 360,
+      errorBuilder: (_, __, ___) => placeholder(Icons.restaurant_rounded),
+    );
+  }
+
+  return Container(
+    height: height,
+    width: width,
+    decoration: const BoxDecoration(
+      color: Color(0xFF231B17),
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color(0xFF2C221D),
+          Color(0xFF1B1513),
+        ],
+      ),
     ),
+    child: img,
   );
 }
+
 
 
 class ItemsScreen extends StatefulWidget {
@@ -808,6 +835,7 @@ class _ItemsScreenState extends State<ItemsScreen> {
 
                           return RepaintBoundary(
                             child: Container(
+                              clipBehavior: Clip.antiAlias,
                               decoration: BoxDecoration(
                                 color: item.isAvailable
                                     ? theme.colorScheme.surface
@@ -823,133 +851,147 @@ class _ItemsScreenState extends State<ItemsScreen> {
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(16),
                                 onTap: () => _showAddEditDishDialog(context, item),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10),
+                                child: SizedBox(
+                                  height: 106,
                                   child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
                                     children: [
-                                      // Thumbnail with Dietary Badge
-                                      Stack(
-                                        children: [
-                                          ClipRRect(
-                                            borderRadius: BorderRadius.circular(10),
-                                            child: _buildDishImage(
-                                              item.imageUri,
-                                              width: 60,
-                                              height: 60,
-                                              fit: BoxFit.cover,
-                                              cacheWidth: 160,
-                                            ),
-                                          ),
-                                          Positioned(
-                                            top: 4,
-                                            left: 4,
-                                            child: Container(
-                                              padding: const EdgeInsets.all(2),
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius: BorderRadius.circular(4),
+                                      // Thumbnail with Dietary Badge - Flush left/top/bottom, no margin
+                                      SizedBox(
+                                        width: 106,
+                                        child: ClipRRect(
+                                          borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+                                          child: Stack(
+                                            fit: StackFit.expand,
+                                            children: [
+                                              _buildDishImage(
+                                                item.imageUri,
+                                                width: 106,
+                                                height: 106,
+                                                fit: BoxFit.cover,
+                                                cacheWidth: 260,
                                               ),
-                                              child: DietaryBadge(type: item.dietaryType, size: 10),
-                                            ),
-                                          ),
-                                          if (!item.isAvailable)
-                                            Positioned.fill(
+                                              Positioned(
+                                                top: 6,
+                                                left: 6,
                                               child: Container(
+                                                padding: const EdgeInsets.all(2.5),
                                                 decoration: BoxDecoration(
-                                                  color: Colors.black.withOpacity(0.5),
-                                                  borderRadius: BorderRadius.circular(10),
+                                                  color: Colors.white,
+                                                  borderRadius: BorderRadius.circular(4),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.black.withOpacity(0.2),
+                                                      blurRadius: 4,
+                                                    ),
+                                                  ],
                                                 ),
-                                                alignment: Alignment.center,
-                                                child: const Icon(Icons.block_rounded, color: Colors.white, size: 24),
+                                                child: DietaryBadge(type: item.dietaryType, size: 10),
                                               ),
                                             ),
-                                        ],
+                                            if (!item.isAvailable)
+                                              Positioned.fill(
+                                                child: Container(
+                                                  color: Colors.black.withOpacity(0.55),
+                                                  alignment: Alignment.center,
+                                                  child: const Icon(Icons.block_rounded, color: Colors.white, size: 26),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
                                       ),
-                                      const SizedBox(width: 12),
+                                    ),
 
-                                // Dish Info
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              item.name,
-                                              style: theme.textTheme.titleSmall?.copyWith(
-                                                fontWeight: FontWeight.w700,
-                                                decoration: item.isAvailable ? null : TextDecoration.lineThrough,
-                                              ),
-                                            ),
-                                          ),
-                                          if (item.isTopSelling) ...[
-                                            const SizedBox(width: 4),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFFF59E0B),
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: const Row(
-                                                mainAxisSize: MainAxisSize.min,
+                                      // Dish Info
+                                      Expanded(
+                                        child: Padding(
+                                          padding: const EdgeInsets.fromLTRB(12, 6, 4, 6),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Row(
                                                 children: [
-                                                  Icon(Icons.star_rounded, color: Colors.white, size: 10),
-                                                  SizedBox(width: 2),
+                                                  Expanded(
+                                                    child: Text(
+                                                      item.name,
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                      style: theme.textTheme.titleSmall?.copyWith(
+                                                        fontWeight: FontWeight.w700,
+                                                        decoration: item.isAvailable ? null : TextDecoration.lineThrough,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  if (item.isTopSelling) ...[
+                                                    const SizedBox(width: 4),
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFFF59E0B),
+                                                        borderRadius: BorderRadius.circular(6),
+                                                      ),
+                                                      child: const Row(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        children: [
+                                                          Icon(Icons.star_rounded, color: Colors.white, size: 10),
+                                                          SizedBox(width: 2),
+                                                          Text(
+                                                            'Bestseller',
+                                                            style: TextStyle(
+                                                              color: Colors.white,
+                                                              fontSize: 9,
+                                                              fontWeight: FontWeight.w800,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ],
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Row(
+                                                children: [
                                                   Text(
-                                                    'Bestseller',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 9,
+                                                    item.formattedPrice,
+                                                    style: theme.textTheme.bodyMedium?.copyWith(
                                                       fontWeight: FontWeight.w800,
+                                                      color: item.isAvailable ? CulinaryColors.flameOrange : Colors.grey,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Expanded(
+                                                    child: Text(
+                                                      item.sku != null
+                                                          ? '• ${item.sku} (${item.salesCount} sold)'
+                                                          : '• ${item.salesCount} sold',
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                      style: theme.textTheme.labelSmall?.copyWith(
+                                                        color: theme.colorScheme.outline,
+                                                      ),
                                                     ),
                                                   ),
                                                 ],
                                               ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            item.formattedPrice,
-                                            style: theme.textTheme.bodyMedium?.copyWith(
-                                              fontWeight: FontWeight.w800,
-                                              color: item.isAvailable ? CulinaryColors.flameOrange : Colors.grey,
-                                            ),
-                                          ),
-                                          if (item.sku != null) ...[
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              '• ${item.sku}',
-                                              style: theme.textTheme.labelSmall?.copyWith(
-                                                color: theme.colorScheme.outline,
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                item.isAvailable ? 'In Stock (Active)' : 'Out of Stock (Deactivated)',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: item.isAvailable ? Colors.green : Colors.red,
+                                                ),
                                               ),
-                                            ),
-                                          ],
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            '• ${item.salesCount} sold',
-                                            style: theme.textTheme.labelSmall?.copyWith(
-                                              color: theme.colorScheme.outline,
-                                            ),
+                                            ],
                                           ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        item.isAvailable ? 'In Stock (Active)' : 'Out of Stock (Deactivated)',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: item.isAvailable ? Colors.green : Colors.red,
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ),
+
+
 
                                 // Quick Stock Toggle Switch
                                 Switch(

@@ -7,7 +7,6 @@ import 'dashboard/dashboard_screen.dart';
 import 'items/items_screen.dart';
 import 'orders/orders_screen.dart';
 import 'pos/pos_screen.dart';
-import 'reports/sales_report_screen.dart';
 import 'settings/settings_screen.dart';
 import 'tables/tables_screen.dart';
 
@@ -272,7 +271,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
   Widget _buildCenterAddButton() {
     final isPosSelected = _currentIndex == 1;
     return GestureDetector(
-      onTap: () => _showQuickActionsModal(context),
+      onTap: () => _onTabSelected(1),
       child: Container(
         width: 48,
         height: 48,
@@ -286,10 +285,13 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          border: isPosSelected ? Border.all(color: Colors.white, width: 2) : null,
+          border: Border.all(
+            color: isPosSelected ? Colors.white : Colors.white.withOpacity(0.35),
+            width: isPosSelected ? 2.2 : 1.2,
+          ),
           boxShadow: [
             BoxShadow(
-              color: CulinaryColors.flameOrange.withOpacity(isPosSelected ? 0.6 : 0.42),
+              color: CulinaryColors.flameOrange.withOpacity(isPosSelected ? 0.65 : 0.42),
               blurRadius: isPosSelected ? 14 : 10,
               offset: const Offset(0, 4),
             ),
@@ -304,206 +306,5 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
     );
   }
 
-  void _showQuickActionsModal(BuildContext context) {
-    NativeApiChannel.triggerNativeHaptic();
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1A17) : const Color(0xFFFFFBF7),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border.all(
-              color: isDark ? Colors.white12 : CulinaryColors.flameOrange.withOpacity(0.2),
-              width: 1.2,
-            ),
-          ),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Pill handle
-              Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white24 : Colors.black12,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Quick Actions',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 18,
-                        ),
-                      ),
-                      Text(
-                        'Fast navigation & billing operations',
-                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _buildQuickActionTile(
-                ctx,
-                title: 'New POS Billing',
-                subtitle: 'Open terminal to enter customer items & print receipt',
-                icon: Icons.point_of_sale_rounded,
-                color: CulinaryColors.flameOrange,
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _onTabSelected(1);
-                },
-              ),
-              const SizedBox(height: 10),
-              _buildQuickActionTile(
-                ctx,
-                title: 'Manage Dishes & Menu',
-                subtitle: 'Add new food item, update price or stock status',
-                icon: Icons.restaurant_menu_rounded,
-                color: CulinaryColors.emeraldGreen,
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _onTabSelected(2);
-                },
-              ),
-              const SizedBox(height: 10),
-              _buildQuickActionTile(
-                ctx,
-                title: 'Table Seating & Status',
-                subtitle: 'View live floor layout, occupied and billed tables',
-                icon: Icons.table_restaurant_rounded,
-                color: CulinaryColors.royalBlue,
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _onTabSelected(3);
-                },
-              ),
-              const SizedBox(height: 10),
-              _buildQuickActionTile(
-                ctx,
-                title: 'Live Kitchen Orders (KOT)',
-                subtitle: 'Check order ticket queue, settle active bills',
-                icon: Icons.receipt_long_rounded,
-                color: const Color(0xFF8B5CF6),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _onTabSelected(4);
-                },
-              ),
-              const SizedBox(height: 10),
-              _buildQuickActionTile(
-                ctx,
-                title: 'Sales & GST Tax PDF Reports',
-                subtitle: 'Generate monthly/quarterly tax audit statements',
-                icon: Icons.picture_as_pdf_rounded,
-                color: CulinaryColors.tandoorSpice,
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SalesReportScreen()),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActionTile(
-    BuildContext ctx, {
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(ctx);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: isDark
-                ? const Color(0xFF26211E)
-                : theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: color.withOpacity(0.25),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.14),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.outline,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 14,
-                color: theme.colorScheme.outline.withOpacity(0.6),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
+

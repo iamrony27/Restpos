@@ -15,58 +15,85 @@ import '../../providers/table_provider.dart';
 import '../../widgets/dietary_badge.dart';
 import 'payment_modal.dart';
 
-Widget buildDishImage(String? uri, {required double height, double width = double.infinity, BoxFit fit = BoxFit.cover, double? cacheWidth}) {
-  if (uri == null || uri.isEmpty) {
+Widget buildDishImage(
+  String? uri, {
+  required double height,
+  double width = double.infinity,
+  BoxFit fit = BoxFit.cover,
+  double? cacheWidth,
+}) {
+  Widget placeholder(IconData icon) {
     return Container(
       height: height,
       width: width,
-      color: Colors.grey.shade200,
-      child: const Icon(Icons.restaurant_rounded, color: Colors.grey),
+      decoration: const BoxDecoration(
+        color: Color(0xFF231B17),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF2C221D),
+            Color(0xFF1B1513),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Icon(icon, color: CulinaryColors.flameOrange.withOpacity(0.65), size: 28),
+      ),
     );
   }
+
+  if (uri == null || uri.isEmpty) {
+    return placeholder(Icons.restaurant_rounded);
+  }
+
+  Widget img;
   if (uri.startsWith('/') || uri.startsWith('file://')) {
     final filePath = uri.replaceFirst('file://', '');
-    return Image.file(
+    img = Image.file(
       File(filePath),
       height: height,
       width: width,
       fit: fit,
-      errorBuilder: (_, __, ___) => Container(
-        height: height,
-        width: width,
-        color: Colors.grey.shade200,
-        child: const Icon(Icons.broken_image_rounded, color: Colors.grey),
-      ),
+      errorBuilder: (_, __, ___) => placeholder(Icons.broken_image_rounded),
     );
-  }
-  if (uri.startsWith('http://') || uri.startsWith('https://')) {
-    return Image.network(
+  } else if (uri.startsWith('http://') || uri.startsWith('https://')) {
+    img = Image.network(
       uri,
       height: height,
       width: width,
       fit: fit,
-      errorBuilder: (_, __, ___) => Container(
-        height: height,
-        width: width,
-        color: Colors.grey.shade200,
-        child: const Icon(Icons.broken_image_rounded, color: Colors.grey),
-      ),
+      errorBuilder: (_, __, ___) => placeholder(Icons.broken_image_rounded),
     );
-  }
-  return Image.asset(
-    uri,
-    height: height,
-    width: width,
-    fit: fit,
-    cacheWidth: cacheWidth?.toInt() ?? 360,
-    errorBuilder: (_, __, ___) => Container(
+  } else {
+    img = Image.asset(
+      uri,
       height: height,
       width: width,
-      color: Colors.grey.shade200,
-      child: const Icon(Icons.restaurant_rounded, color: Colors.grey),
+      fit: fit,
+      cacheWidth: cacheWidth?.toInt() ?? 360,
+      errorBuilder: (_, __, ___) => placeholder(Icons.restaurant_rounded),
+    );
+  }
+
+  return Container(
+    height: height,
+    width: width,
+    decoration: const BoxDecoration(
+      color: Color(0xFF231B17),
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color(0xFF2C221D),
+          Color(0xFF1B1513),
+        ],
+      ),
     ),
+    child: img,
   );
 }
+
 
 
 class PosScreen extends StatefulWidget {
@@ -829,7 +856,7 @@ class _PosScreenState extends State<PosScreen> {
                           crossAxisCount: 2,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
-                          childAspectRatio: 0.92,
+                          childAspectRatio: 0.88,
                         ),
                         itemCount: dishes.length,
                         itemBuilder: (context, index) {
@@ -1312,6 +1339,7 @@ class _PosScreenState extends State<PosScreen> {
 
                           return RepaintBoundary(
                             child: Container(
+                              clipBehavior: Clip.antiAlias,
                               decoration: BoxDecoration(
                                 color: item.isAvailable
                                     ? theme.colorScheme.surface
@@ -1343,95 +1371,111 @@ class _PosScreenState extends State<PosScreen> {
                                   }
                                 },
                                 onLongPress: () => _showAddEditDishDialog(context, item),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8),
+                                child: SizedBox(
+                                  height: 104,
                                   child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
                                     children: [
-                                      // Dish Thumbnail
-                                      Stack(
-                                        children: [
-                                          ClipRRect(
-                                            borderRadius: BorderRadius.circular(10),
-                                            child: buildDishImage(
+                                      // Dish Thumbnail - Flush left/top/bottom, no margin
+                                      SizedBox(
+                                        width: 104,
+                                        child: ClipRRect(
+                                          borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+                                          child: Stack(
+                                          fit: StackFit.expand,
+                                          children: [
+                                            buildDishImage(
                                               item.imageUri,
-                                              height: 64,
-                                              width: 64,
+                                              height: 104,
+                                              width: 104,
                                               fit: BoxFit.cover,
-                                              cacheWidth: 160,
+                                              cacheWidth: 260,
                                             ),
-                                          ),
-                                          Positioned(
-                                            top: 4,
-                                            left: 4,
-                                            child: Container(
-                                              padding: const EdgeInsets.all(2),
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius: BorderRadius.circular(4),
-                                              ),
-                                              child: DietaryBadge(type: item.dietaryType, size: 10),
-                                            ),
-                                          ),
-                                          if (!item.isAvailable)
-                                            Positioned.fill(
+                                            Positioned(
+                                              top: 6,
+                                              left: 6,
                                               child: Container(
+                                                padding: const EdgeInsets.all(2.5),
                                                 decoration: BoxDecoration(
-                                                  color: Colors.black.withOpacity(0.5),
-                                                  borderRadius: BorderRadius.circular(10),
+                                                  color: Colors.white,
+                                                  borderRadius: BorderRadius.circular(4),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.black.withOpacity(0.2),
+                                                      blurRadius: 4,
+                                                    ),
+                                                  ],
                                                 ),
-                                                alignment: Alignment.center,
-                                                child: const Icon(Icons.block_rounded, color: Colors.white, size: 22),
+                                                child: DietaryBadge(type: item.dietaryType, size: 10),
                                               ),
                                             ),
-                                        ],
+                                            if (!item.isAvailable)
+                                              Positioned.fill(
+                                                child: Container(
+                                                  color: Colors.black.withOpacity(0.55),
+                                                  alignment: Alignment.center,
+                                                  child: const Icon(Icons.block_rounded, color: Colors.white, size: 26),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
                                       ),
-                                      const SizedBox(width: 12),
+                                    ),
 
                                       // Details
                                       Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Expanded(
-                                                  child: Text(
-                                                    item.name,
-                                                    style: theme.textTheme.titleSmall?.copyWith(
-                                                      fontWeight: FontWeight.w700,
-                                                      decoration: item.isAvailable ? null : TextDecoration.lineThrough,
+                                        child: Padding(
+                                          padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      item.name,
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                      style: theme.textTheme.titleSmall?.copyWith(
+                                                        fontWeight: FontWeight.w700,
+                                                        decoration: item.isAvailable ? null : TextDecoration.lineThrough,
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                                if (item.isTopSelling) ...[
-                                                  const SizedBox(width: 4),
-                                                  Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                                    decoration: BoxDecoration(
-                                                      color: const Color(0xFFF59E0B),
-                                                      borderRadius: BorderRadius.circular(6),
-                                                    ),
-                                                    child: const Row(
-                                                      mainAxisSize: MainAxisSize.min,
-                                                      children: [
-                                                        Icon(Icons.star_rounded, color: Colors.white, size: 10),
-                                                        SizedBox(width: 2),
-                                                        Text(
-                                                          'Best',
-                                                          style: TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize: 9,
-                                                            fontWeight: FontWeight.w800,
+                                                  if (item.isTopSelling) ...[
+                                                    const SizedBox(width: 4),
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFFF59E0B),
+                                                        borderRadius: BorderRadius.circular(6),
+                                                      ),
+                                                      child: const Row(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        children: [
+                                                          Icon(Icons.star_rounded, color: Colors.white, size: 10),
+                                                          SizedBox(width: 2),
+                                                          Text(
+                                                            'Best',
+                                                            style: TextStyle(
+                                                              color: Colors.white,
+                                                              fontSize: 9,
+                                                              fontWeight: FontWeight.w800,
+                                                            ),
                                                           ),
-                                                        ),
-                                                      ],
+                                                        ],
+                                                      ),
                                                     ),
-                                                  ),
+                                                  ],
                                                 ],
-                                              ],
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Row(
+                                              ),
+
+                                            const SizedBox(height: 3),
+                                            Wrap(
+                                              crossAxisAlignment: WrapCrossAlignment.center,
+                                              spacing: 8,
+                                              runSpacing: 2,
                                               children: [
                                                 Text(
                                                   item.formattedPrice,
@@ -1440,8 +1484,7 @@ class _PosScreenState extends State<PosScreen> {
                                                     color: item.isAvailable ? CulinaryColors.flameOrange : Colors.grey,
                                                   ),
                                                 ),
-                                                if (cartLine != null) ...[
-                                                  const SizedBox(width: 8),
+                                                if (cartLine != null)
                                                   Container(
                                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                                                     decoration: BoxDecoration(
@@ -1457,12 +1500,13 @@ class _PosScreenState extends State<PosScreen> {
                                                       ),
                                                     ),
                                                   ),
-                                                ],
                                               ],
                                             ),
+
                                           ],
                                         ),
                                       ),
+                                    ),
 
                                       // Quick Add or Action button
                                       if (item.isAvailable && cartLine != null && cartLine.quantity > 0)
