@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/animations/bouncing_button.dart';
 import '../../core/channels/native_api_channel.dart';
+import '../../core/utils/app_notification.dart';
 
 class WifiDebuggingGuideScreen extends StatelessWidget {
   const WifiDebuggingGuideScreen({super.key});
 
   void _copyCommand(BuildContext context, String text, String label) {
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Copied "$label" to clipboard!'),
-        behavior: SnackBarBehavior.floating,
-      ),
+    AppNotification.showSuccess(
+      context,
+      'Copied "$label" to clipboard!',
+      title: 'Copied to Clipboard',
     );
   }
 

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/animations/bouncing_button.dart';
 import '../../core/channels/native_api_channel.dart';
 import '../../core/theme/color_schemes.dart';
+import '../../core/utils/app_notification.dart';
 import '../../providers/menu_provider.dart';
 import '../../providers/pos_provider.dart';
 import '../../widgets/dietary_badge.dart';
@@ -150,18 +151,10 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
 
     pos.updateProfile(updatedProfile);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.check_circle_rounded, color: Colors.white),
-            SizedBox(width: 12),
-            Text('Restaurant Setup Saved Successfully!'),
-          ],
-        ),
-        backgroundColor: CulinaryColors.emeraldGreen,
-        behavior: SnackBarBehavior.floating,
-      ),
+    AppNotification.showSuccess(
+      context,
+      'Restaurant Setup Saved Successfully!',
+      title: 'Profile Updated',
     );
 
     Navigator.pop(context);

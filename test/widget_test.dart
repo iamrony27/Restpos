@@ -6,7 +6,9 @@ import 'package:flutter_restaurant_pos/models/order_model.dart';
 import 'package:flutter_restaurant_pos/models/restaurant_profile.dart';
 import 'package:flutter_restaurant_pos/providers/pos_provider.dart';
 import 'package:flutter_restaurant_pos/widgets/thermal_slip_preview_dialog.dart';
+import 'package:flutter_restaurant_pos/core/utils/app_notification.dart';
 import 'package:provider/provider.dart';
+
 
 void main() {
   testWidgets('Restaurant POS smoke test', (WidgetTester tester) async {
@@ -142,4 +144,44 @@ void main() {
     expect(find.text('Print Slip 🖨️'), findsOneWidget);
     expect(find.text('Cancel / Edit'), findsOneWidget);
   });
+
+  testWidgets('AppNotification displays at top and dismisses', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  AppNotification.showSuccess(
+                    context,
+                    'Operation completed successfully',
+                    title: 'Backup Created',
+                  );
+                },
+                child: const Text('Trigger Notification'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Tap to trigger notification
+    await tester.tap(find.text('Trigger Notification'));
+    await tester.pump(); // Start animation
+    await tester.pump(const Duration(milliseconds: 350)); // Settle animation
+
+    // Verify top notification card appears
+    expect(find.text('Backup Created'), findsOneWidget);
+    expect(find.text('Operation completed successfully'), findsOneWidget);
+
+    // Test dismiss
+    AppNotification.dismiss();
+    await tester.pump();
+    expect(find.text('Operation completed successfully'), findsNothing);
+  });
 }
+

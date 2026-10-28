@@ -139,9 +139,11 @@ class MainActivity : FlutterActivity() {
                             val channel = android.app.NotificationChannel(
                                 channelId,
                                 "RestPos Notifications",
-                                android.app.NotificationManager.IMPORTANCE_DEFAULT
+                                android.app.NotificationManager.IMPORTANCE_HIGH
                             ).apply {
                                 description = "Notifications for RestPos backups"
+                                enableVibration(true)
+                                setShowBadge(true)
                             }
                             notificationManager.createNotificationChannel(channel)
                         }
@@ -157,6 +159,8 @@ class MainActivity : FlutterActivity() {
                             .setContentTitle(title)
                             .setContentText(message)
                             .setSmallIcon(android.R.drawable.stat_sys_upload_done)
+                            .setPriority(android.app.Notification.PRIORITY_HIGH)
+                            .setDefaults(android.app.Notification.DEFAULT_ALL)
                             .setAutoCancel(true)
                             .build()
 

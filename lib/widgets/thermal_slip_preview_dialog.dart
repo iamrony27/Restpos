@@ -5,6 +5,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../core/channels/native_api_channel.dart';
 import '../core/theme/color_schemes.dart';
+import '../core/utils/app_notification.dart';
 import '../models/order_model.dart';
 import '../models/restaurant_profile.dart';
 import '../providers/pos_provider.dart';
@@ -135,25 +136,12 @@ Payment Mode: ${pMethod.name.toUpperCase()}
       setState(() => _isPrinting = false);
       widget.onPrintConfirmed?.call();
       Navigator.of(context).pop(true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  widget.order != null
-                      ? 'Thermal slip printed for Order #${widget.order!.orderNumber}'
-                      : 'Test thermal slip dispatched to printer!',
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: CulinaryColors.emeraldGreen,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
+      AppNotification.showSuccess(
+        context,
+        widget.order != null
+            ? 'Thermal slip printed for Order #${widget.order!.orderNumber}'
+            : 'Test thermal slip dispatched to printer!',
+        title: 'Thermal Print Dispatched',
       );
     }
   }

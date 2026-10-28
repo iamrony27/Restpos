@@ -14,6 +14,7 @@ import '../setup/setup_wizard_screen.dart';
 import 'wifi_debugging_guide_screen.dart';
 import '../../widgets/developer_support_section.dart';
 import '../../widgets/thermal_slip_preview_dialog.dart';
+import '../../core/utils/app_notification.dart';
 
 class SettingsScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -858,18 +859,19 @@ Status: CONNECTED & READY
         );
 
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('✓ Backup saved successfully: ${file.path} (Previous overwritten)'),
-              backgroundColor: CulinaryColors.emeraldGreen,
-              duration: const Duration(seconds: 4),
-            ),
+          AppNotification.showSuccess(
+            context,
+            'Saved to ${file.path}',
+            title: 'Backup Successful',
+            duration: const Duration(seconds: 4),
           );
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Backup failed: $e'), backgroundColor: Colors.red),
+          AppNotification.showError(
+            context,
+            'Backup failed: $e',
+            title: 'Backup Error',
           );
         }
       }
@@ -1006,12 +1008,11 @@ Status: CONNECTED & READY
         tableProv.replaceAllTables(backup.tables);
         orderProv.replaceAllOrders(backup.orders);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('✓ Restored ${backup.items.length} dishes, ${backup.tables.length} tables, and ${backup.orders.length} orders!'),
-            backgroundColor: CulinaryColors.emeraldGreen,
-            duration: const Duration(seconds: 4),
-          ),
+        AppNotification.showSuccess(
+          context,
+          'Restored ${backup.items.length} dishes, ${backup.tables.length} tables, and ${backup.orders.length} orders!',
+          title: 'Restore Completed',
+          duration: const Duration(seconds: 4),
         );
       }
     }

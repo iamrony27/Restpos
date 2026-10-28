@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/channels/native_api_channel.dart';
 import '../../core/theme/color_schemes.dart';
+import '../../core/utils/app_notification.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../models/order_model.dart';
 import '../../providers/menu_provider.dart';
@@ -120,16 +121,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onTap: () {
               NativeApiChannel.triggerNativeHaptic();
               posProvider.togglePrinterConnection();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    posProvider.isPrinterConnected
-                        ? 'Thermal Printer Connected (${posProvider.printerName})'
-                        : 'Thermal Printer Disconnected / Offline',
-                  ),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
+              if (posProvider.isPrinterConnected) {
+                AppNotification.showSuccess(
+                  context,
+                  'Thermal Printer Connected (${posProvider.printerName})',
+                  title: 'Printer Online',
+                );
+              } else {
+                AppNotification.showInfo(
+                  context,
+                  'Thermal Printer Disconnected / Offline',
+                  title: 'Printer Offline',
+                  customIcon: Icons.print_disabled_rounded,
+                );
+              }
             },
             child: Container(
               margin: const EdgeInsets.only(right: 6),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/animations/bouncing_button.dart';
 import '../../core/channels/native_api_channel.dart';
 import '../../core/theme/color_schemes.dart';
+import '../../core/utils/app_notification.dart';
 import '../../providers/order_provider.dart';
 import '../../providers/pos_provider.dart';
 import '../../services/report_pdf_service.dart';
@@ -642,8 +643,10 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('PDF generation notice: $e')),
+        AppNotification.showError(
+          context,
+          'PDF generation notice: $e',
+          title: 'Report Notice',
         );
       }
     } finally {

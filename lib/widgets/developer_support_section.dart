@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../core/channels/native_api_channel.dart';
 import '../core/theme/color_schemes.dart';
+import '../core/utils/app_notification.dart';
 import '../services/github_update_service.dart';
 
 class DeveloperSupportSection extends StatefulWidget {
@@ -27,8 +28,6 @@ class _DeveloperSupportSectionState extends State<DeveloperSupportSection> {
   Future<void> _handleCheckForUpdate(BuildContext context) async {
     NativeApiChannel.triggerNativeHaptic();
     setState(() => _isCheckingUpdate = true);
-
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     try {
       final info = await GitHubUpdateService.checkForUpdate();
@@ -132,11 +131,10 @@ class _DeveloperSupportSectionState extends State<DeveloperSupportSection> {
     } catch (e) {
       if (context.mounted) {
         setState(() => _isCheckingUpdate = false);
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text('Update check failed: $e'),
-            backgroundColor: Colors.redAccent,
-          ),
+        AppNotification.showError(
+          context,
+          'Update check failed: $e',
+          title: 'Update Check',
         );
       }
     }
@@ -158,19 +156,10 @@ class _DeveloperSupportSectionState extends State<DeveloperSupportSection> {
   void _handleCopyUpi(BuildContext context) {
     NativeApiChannel.triggerNativeHaptic();
     Clipboard.setData(const ClipboardData(text: upiId));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
-            SizedBox(width: 10),
-            Text('UPI ID copied: 7074018142@ptsbi', style: TextStyle(fontWeight: FontWeight.w600)),
-          ],
-        ),
-        backgroundColor: CulinaryColors.emeraldGreen,
-        duration: Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
+    AppNotification.showSuccess(
+      context,
+      'UPI ID copied: $upiId',
+      title: 'Copied to Clipboard',
     );
   }
 

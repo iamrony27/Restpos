@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/channels/native_api_channel.dart';
 import '../../core/theme/color_schemes.dart';
+import '../../core/utils/app_notification.dart';
 import '../../models/menu_item.dart';
 import '../../providers/menu_provider.dart';
 import '../../widgets/dietary_badge.dart';
@@ -391,11 +392,10 @@ class _ItemsScreenState extends State<ItemsScreen> {
                     final name = nameController.text.trim();
                     final priceNum = double.tryParse(priceController.text.trim()) ?? 0;
                     if (name.isEmpty || priceNum <= 0) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please enter a valid dish name and price'),
-                          backgroundColor: Colors.red,
-                        ),
+                      AppNotification.showError(
+                        context,
+                        'Please enter a valid dish name and price',
+                        title: 'Validation Error',
                       );
                       return;
                     }
@@ -424,11 +424,10 @@ class _ItemsScreenState extends State<ItemsScreen> {
                     }
 
                     Navigator.pop(dlgContext);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(isEditing ? 'Updated ${newItem.name}' : 'Added ${newItem.name}'),
-                        backgroundColor: CulinaryColors.emeraldGreen,
-                      ),
+                    AppNotification.showSuccess(
+                      context,
+                      isEditing ? 'Updated ${newItem.name}' : 'Added ${newItem.name}',
+                      title: isEditing ? 'Dish Updated' : 'Dish Added',
                     );
                   },
                   child: Text(isEditing ? 'Save Changes' : 'Add Dish'),
@@ -463,11 +462,10 @@ class _ItemsScreenState extends State<ItemsScreen> {
             onPressed: () {
               menuProvider.deleteItem(item.id);
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Deleted ${item.name}'),
-                  backgroundColor: Colors.red,
-                ),
+              AppNotification.showSuccess(
+                context,
+                'Deleted ${item.name}',
+                title: 'Dish Deleted',
               );
             },
             child: const Text('Delete'),

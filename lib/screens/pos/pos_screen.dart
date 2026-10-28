@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/animations/bouncing_button.dart';
 import '../../core/channels/native_api_channel.dart';
 import '../../core/theme/color_schemes.dart';
+import '../../core/utils/app_notification.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../models/menu_item.dart';
 import '../../models/order_model.dart';
@@ -378,8 +379,10 @@ class _PosScreenState extends State<PosScreen> {
                     final name = nameController.text.trim();
                     final priceNum = double.tryParse(priceController.text.trim()) ?? 0.0;
                     if (name.isEmpty || priceNum <= 0) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please enter a valid dish name and price')),
+                      AppNotification.showError(
+                        context,
+                        'Please enter a valid dish name and price',
+                        title: 'Validation Error',
                       );
                       return;
                     }
@@ -424,15 +427,12 @@ class _PosScreenState extends State<PosScreen> {
                     }
 
                     Navigator.pop(dlgContext);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          isEditing
-                              ? 'Dish "$name" updated successfully'
-                              : 'Dish "$name" added to menu',
-                        ),
-                        backgroundColor: Colors.green.shade700,
-                      ),
+                    AppNotification.showSuccess(
+                      context,
+                      isEditing
+                          ? 'Dish "$name" updated successfully'
+                          : 'Dish "$name" added to menu',
+                      title: isEditing ? 'Dish Updated' : 'Dish Added',
                     );
                   },
                   child: Text(isEditing ? 'Save Changes' : 'Add Dish'),
@@ -473,11 +473,10 @@ class _PosScreenState extends State<PosScreen> {
                 context.read<MenuProvider>().deleteItem(item.id);
                 context.read<PosProvider>().removeFromCart(item.id);
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Dish "${item.name}" deleted from menu'),
-                    backgroundColor: Colors.red.shade700,
-                  ),
+                AppNotification.showSuccess(
+                  context,
+                  'Dish "${item.name}" deleted from menu',
+                  title: 'Dish Deleted',
                 );
               },
               child: const Text('Delete'),
@@ -929,12 +928,10 @@ class _PosScreenState extends State<PosScreen> {
                                                       onPressed: () {
                                                         Navigator.pop(ctx);
                                                         menuProvider.setItemAvailability(item.id, true);
-                                                        ScaffoldMessenger.of(context).showSnackBar(
-                                                          SnackBar(
-                                                            content: Text('✓ ${item.name} is now Available / In Stock'),
-                                                            backgroundColor: CulinaryColors.emeraldGreen,
-                                                            duration: const Duration(seconds: 2),
-                                                          ),
+                                                        AppNotification.showSuccess(
+                                                          context,
+                                                          '${item.name} is now Available / In Stock',
+                                                          title: 'Dish Available',
                                                         );
                                                       },
                                                     ),
@@ -1083,16 +1080,19 @@ class _PosScreenState extends State<PosScreen> {
                                             onSelected: (val) {
                                               if (val == 'toggle') {
                                                 menuProvider.toggleItemAvailability(item.id);
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      item.isAvailable
-                                                          ? '${item.name} marked Out of Stock / Inactive'
-                                                          : '${item.name} is now Available / In Stock',
-                                                    ),
-                                                    duration: const Duration(seconds: 2),
-                                                  ),
-                                                );
+                                                if (!item.isAvailable) {
+                                                  AppNotification.showSuccess(
+                                                    context,
+                                                    '${item.name} is now Available / In Stock',
+                                                    title: 'Item In Stock',
+                                                  );
+                                                } else {
+                                                  AppNotification.showInfo(
+                                                    context,
+                                                    '${item.name} marked Out of Stock / Inactive',
+                                                    title: 'Item Out of Stock',
+                                                  );
+                                                }
                                               } else if (val == 'edit') {
                                                 _showAddEditDishDialog(context, item);
                                               } else if (val == 'delete') {
@@ -1335,12 +1335,10 @@ class _PosScreenState extends State<PosScreen> {
                                   } else {
                                     NativeApiChannel.triggerNativeHaptic();
                                     menuProvider.toggleItemAvailability(item.id);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('✓ ${item.name} activated'),
-                                        backgroundColor: CulinaryColors.emeraldGreen,
-                                        duration: const Duration(seconds: 2),
-                                      ),
+                                    AppNotification.showSuccess(
+                                      context,
+                                      '${item.name} activated',
+                                      title: 'Dish Activated',
                                     );
                                   }
                                 },
