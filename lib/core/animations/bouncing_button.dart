@@ -60,9 +60,7 @@ class _BouncingButtonState extends State<BouncingButton>
   }
 
   void _onTapUp(TapUpDetails details) {
-    if (widget.onPressed == null) return;
     _controller.reverse();
-    widget.onPressed?.call();
   }
 
   void _onTapCancel() {
@@ -75,6 +73,7 @@ class _BouncingButtonState extends State<BouncingButton>
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
+      onTap: widget.onPressed,
       behavior: HitTestBehavior.opaque,
       child: AnimatedBuilder(
         animation: _scaleAnimation,

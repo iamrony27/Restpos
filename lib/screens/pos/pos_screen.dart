@@ -134,7 +134,7 @@ class _PosScreenState extends State<PosScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Point of Sale',
+          'POS Billing',
           style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
         ),
         actions: [
@@ -142,6 +142,10 @@ class _PosScreenState extends State<PosScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: SegmentedButton<OrderType>(
+              style: const ButtonStyle(
+                visualDensity: VisualDensity.compact,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
               segments: const [
                 ButtonSegment(
                   value: OrderType.dineIn,
@@ -389,25 +393,20 @@ class _PosScreenState extends State<PosScreen> {
       ),
       // Floating Bottom Cart Bar
       bottomSheet: posProvider.cart.isNotEmpty
-          ? Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerLowest,
-                border: Border(
-                  top: BorderSide(
-                    color: theme.colorScheme.outlineVariant.withOpacity(0.4),
+          ? Material(
+              elevation: 12,
+              color: theme.colorScheme.surfaceContainerLowest,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: theme.colorScheme.outlineVariant.withOpacity(0.4),
+                    ),
                   ),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 16,
-                    offset: const Offset(0, -4),
-                  ),
-                ],
-              ),
-              child: SafeArea(
-                child: Row(
+                child: SafeArea(
+                  child: Row(
                   children: [
                     Column(
                       mainAxisSize: MainAxisSize.min,
@@ -456,8 +455,9 @@ class _PosScreenState extends State<PosScreen> {
                   ],
                 ),
               ),
-            )
-          : null,
+            ),
+          )
+        : null,
     );
   }
 }
