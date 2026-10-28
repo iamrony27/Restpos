@@ -889,6 +889,39 @@ class _ItemsScreenState extends State<ItemsScreen> {
                                                 child: DietaryBadge(type: item.dietaryType, size: 10),
                                               ),
                                             ),
+                                            if (item.isTopSelling)
+                                              Positioned(
+                                                bottom: 6,
+                                                left: 6,
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFFF59E0B),
+                                                    borderRadius: BorderRadius.circular(5),
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.black.withOpacity(0.35),
+                                                        blurRadius: 4,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  child: const Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      Icon(Icons.star_rounded, color: Colors.white, size: 10),
+                                                      SizedBox(width: 2),
+                                                      Text(
+                                                        'Bestseller',
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 9,
+                                                          fontWeight: FontWeight.w800,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
                                             if (!item.isAvailable)
                                               Positioned.fill(
                                                 child: Container(
@@ -910,81 +943,89 @@ class _ItemsScreenState extends State<ItemsScreen> {
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             mainAxisAlignment: MainAxisAlignment.center,
                                             children: [
-                                              Row(
-                                                children: [
-                                                  Expanded(
-                                                    child: Text(
-                                                      item.name,
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis,
-                                                      style: theme.textTheme.titleSmall?.copyWith(
-                                                        fontWeight: FontWeight.w700,
-                                                        decoration: item.isAvailable ? null : TextDecoration.lineThrough,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  if (item.isTopSelling) ...[
-                                                    const SizedBox(width: 4),
-                                                    Container(
-                                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                                      decoration: BoxDecoration(
-                                                        color: const Color(0xFFF59E0B),
-                                                        borderRadius: BorderRadius.circular(6),
-                                                      ),
-                                                      child: const Row(
-                                                        mainAxisSize: MainAxisSize.min,
-                                                        children: [
-                                                          Icon(Icons.star_rounded, color: Colors.white, size: 10),
-                                                          SizedBox(width: 2),
-                                                          Text(
-                                                            'Bestseller',
-                                                            style: TextStyle(
-                                                              color: Colors.white,
-                                                              fontSize: 9,
-                                                              fontWeight: FontWeight.w800,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ],
+                                              // Full width prominent Dish Name
+                                              Text(
+                                                item.name,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: theme.textTheme.titleSmall?.copyWith(
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: 14.5,
+                                                  decoration: item.isAvailable ? null : TextDecoration.lineThrough,
+                                                ),
                                               ),
-                                              const SizedBox(height: 2),
+                                              const SizedBox(height: 3),
+
+                                              // Price & Sold item quantity badge
                                               Row(
                                                 children: [
                                                   Text(
                                                     item.formattedPrice,
                                                     style: theme.textTheme.bodyMedium?.copyWith(
-                                                      fontWeight: FontWeight.w800,
+                                                      fontWeight: FontWeight.w900,
+                                                      fontSize: 14,
                                                       color: item.isAvailable ? CulinaryColors.flameOrange : Colors.grey,
                                                     ),
                                                   ),
-                                                  const SizedBox(width: 6),
-                                                  Expanded(
-                                                    child: Text(
-                                                      item.sku != null
-                                                          ? '• ${item.sku} (${item.salesCount} sold)'
-                                                          : '• ${item.salesCount} sold',
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis,
-                                                      style: theme.textTheme.labelSmall?.copyWith(
-                                                        color: theme.colorScheme.outline,
-                                                      ),
+                                                  const SizedBox(width: 8),
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                                    decoration: BoxDecoration(
+                                                      color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.65),
+                                                      borderRadius: BorderRadius.circular(5),
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      children: [
+                                                        const Icon(
+                                                          Icons.trending_up_rounded,
+                                                          size: 11.5,
+                                                          color: CulinaryColors.flameOrange,
+                                                        ),
+                                                        const SizedBox(width: 3),
+                                                        Text(
+                                                          '${item.salesCount} sold',
+                                                          style: TextStyle(
+                                                            fontSize: 10,
+                                                            fontWeight: FontWeight.w700,
+                                                            color: theme.colorScheme.onSurfaceVariant,
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
                                                   ),
                                                 ],
                                               ),
-                                              const SizedBox(height: 2),
-                                              Text(
-                                                item.isAvailable ? 'In Stock (Active)' : 'Out of Stock (Deactivated)',
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: item.isAvailable ? Colors.green : Colors.red,
-                                                ),
+                                              const SizedBox(height: 3),
+
+                                              // SKU & Stock Status
+                                              Row(
+                                                children: [
+                                                  if (item.sku != null && item.sku!.isNotEmpty) ...[
+                                                    Text(
+                                                      item.sku!,
+                                                      style: theme.textTheme.labelSmall?.copyWith(
+                                                        color: theme.colorScheme.outline,
+                                                        fontSize: 10.5,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      ' • ',
+                                                      style: TextStyle(
+                                                        color: theme.colorScheme.outline,
+                                                        fontSize: 10,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                  Text(
+                                                    item.isAvailable ? 'In Stock' : 'Out of Stock',
+                                                    style: TextStyle(
+                                                      fontSize: 11,
+                                                      fontWeight: FontWeight.w700,
+                                                      color: item.isAvailable ? Colors.green : Colors.red,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
                                             ],
                                           ),

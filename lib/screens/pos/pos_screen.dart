@@ -1409,6 +1409,39 @@ class _PosScreenState extends State<PosScreen> {
                                                 child: DietaryBadge(type: item.dietaryType, size: 10),
                                               ),
                                             ),
+                                            if (item.isTopSelling)
+                                              Positioned(
+                                                bottom: 6,
+                                                left: 6,
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFFF59E0B),
+                                                    borderRadius: BorderRadius.circular(5),
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.black.withOpacity(0.35),
+                                                        blurRadius: 4,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  child: const Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      Icon(Icons.star_rounded, color: Colors.white, size: 10),
+                                                      SizedBox(width: 2),
+                                                      Text(
+                                                        'Best',
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 9,
+                                                          fontWeight: FontWeight.w800,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
                                             if (!item.isAvailable)
                                               Positioned.fill(
                                                 child: Container(
@@ -1430,45 +1463,14 @@ class _PosScreenState extends State<PosScreen> {
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             mainAxisAlignment: MainAxisAlignment.center,
                                             children: [
-                                              Row(
-                                                children: [
-                                                  Expanded(
-                                                    child: Text(
-                                                      item.name,
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis,
-                                                      style: theme.textTheme.titleSmall?.copyWith(
-                                                        fontWeight: FontWeight.w700,
-                                                        decoration: item.isAvailable ? null : TextDecoration.lineThrough,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  if (item.isTopSelling) ...[
-                                                    const SizedBox(width: 4),
-                                                    Container(
-                                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                                      decoration: BoxDecoration(
-                                                        color: const Color(0xFFF59E0B),
-                                                        borderRadius: BorderRadius.circular(6),
-                                                      ),
-                                                      child: const Row(
-                                                        mainAxisSize: MainAxisSize.min,
-                                                        children: [
-                                                          Icon(Icons.star_rounded, color: Colors.white, size: 10),
-                                                          SizedBox(width: 2),
-                                                          Text(
-                                                            'Best',
-                                                            style: TextStyle(
-                                                              color: Colors.white,
-                                                              fontSize: 9,
-                                                              fontWeight: FontWeight.w800,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ],
+                                              Text(
+                                                item.name,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: theme.textTheme.titleSmall?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                  decoration: item.isAvailable ? null : TextDecoration.lineThrough,
+                                                ),
                                               ),
 
                                             const SizedBox(height: 3),
