@@ -683,6 +683,8 @@ class _ItemsScreenState extends State<ItemsScreen> {
                   )
                 : _isGridView
                     ? GridView.builder(
+                        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                        cacheExtent: 600,
                         padding: const EdgeInsets.fromLTRB(12, 6, 12, 90),
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
@@ -827,6 +829,8 @@ class _ItemsScreenState extends State<ItemsScreen> {
                         },
                       )
                     : ListView.separated(
+                        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                        cacheExtent: 600,
                         padding: const EdgeInsets.fromLTRB(14, 4, 14, 90),
                         itemCount: items.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 8),

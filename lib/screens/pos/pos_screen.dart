@@ -889,6 +889,8 @@ class _PosScreenState extends State<PosScreen> {
                   )
                 : _isGridView
                     ? GridView.builder(
+                        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                        cacheExtent: 600,
                         padding: const EdgeInsets.fromLTRB(12, 6, 12, 90),
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
@@ -1368,6 +1370,8 @@ class _PosScreenState extends State<PosScreen> {
                         },
                       )
                     : ListView.separated(
+                        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                        cacheExtent: 600,
                         padding: const EdgeInsets.fromLTRB(12, 6, 12, 90),
                         itemCount: dishes.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 8),
@@ -1814,8 +1818,19 @@ class _CartBottomSheet extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Subtotal', style: theme.textTheme.bodyMedium),
-                    Text(CurrencyFormatter.formatRupees(posProvider.subtotalRupees)),
+                    Text(
+                      posProvider.isGstEnabled && posProvider.isTaxInclusive
+                          ? 'Taxable Base (Net)'
+                          : 'Subtotal',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    Text(
+                      CurrencyFormatter.formatRupees(
+                        posProvider.isGstEnabled && posProvider.isTaxInclusive
+                            ? posProvider.taxableBaseRupees
+                            : posProvider.subtotalRupees,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 6),
@@ -1824,7 +1839,7 @@ class _CartBottomSheet extends StatelessWidget {
                   children: [
                     Text(
                       posProvider.isGstEnabled
-                          ? 'GST (${posProvider.gstRatePercent.toStringAsFixed(1)}%) [CGST ${(posProvider.gstRatePercent / 2).toStringAsFixed(1)}% + SGST ${(posProvider.gstRatePercent / 2).toStringAsFixed(1)}%]'
+                          ? 'GST (${posProvider.gstRatePercent.toStringAsFixed(1)}%) [CGST ${(posProvider.gstRatePercent / 2).toStringAsFixed(1)}% + SGST ${(posProvider.gstRatePercent / 2).toStringAsFixed(1)}%]${posProvider.isTaxInclusive ? ' (Incl.)' : ''}'
                           : 'Tax Exempt / Non-GST',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: posProvider.isGstEnabled ? theme.colorScheme.outline : Colors.green.shade700,
@@ -1840,6 +1855,25 @@ class _CartBottomSheet extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (posProvider.discountRupees > 0) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Discount',
+                        style: theme.textTheme.bodySmall?.copyWith(color: Colors.green.shade700),
+                      ),
+                      Text(
+                        '-${CurrencyFormatter.formatRupees(posProvider.discountRupees)}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.green.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 if (posProvider.isRoundOffEnabled && posProvider.roundOffAdjustmentPaise != 0) ...[
                   const SizedBox(height: 6),
                   Row(

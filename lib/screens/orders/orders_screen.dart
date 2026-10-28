@@ -139,11 +139,59 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('GST (5%)'),
-                    Text(CurrencyFormatter.formatRupees(order.taxRupees)),
+                    Text(
+                      order.isTaxInclusive && order.taxBps > 0 ? 'Taxable Base (Net)' : 'Subtotal',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    Text(
+                      CurrencyFormatter.formatRupees(
+                        order.isTaxInclusive && order.taxBps > 0
+                            ? order.taxableBaseRupees
+                            : order.subtotalRupees,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      order.taxBps > 0
+                          ? 'GST (${(order.taxBps / 100).toStringAsFixed(1)}% - CGST ${(order.taxBps / 200).toStringAsFixed(1)}% + SGST ${(order.taxBps / 200).toStringAsFixed(1)}%)${order.isTaxInclusive ? ' [Incl]' : ''}'
+                          : 'Tax (Exempt)',
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
+                    ),
+                    Text(CurrencyFormatter.formatRupees(order.taxRupees)),
+                  ],
+                ),
+                if (order.discountPaise > 0) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Discount', style: theme.textTheme.bodySmall?.copyWith(color: Colors.green.shade700)),
+                      Text(
+                        '-${CurrencyFormatter.formatRupees(order.discountRupees)}',
+                        style: theme.textTheme.bodySmall?.copyWith(color: Colors.green.shade700, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ],
+                if (order.roundOffPaise != 0) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Round Off', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline)),
+                      Text(
+                        '${order.roundOffPaise > 0 ? "+" : ""}${CurrencyFormatter.formatRupees(order.roundOffRupees)}',
+                        style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 6),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -292,8 +340,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
         return StatefulBuilder(
           builder: (dialogContext, setModalState) {
             final subtotalPaise = draftItems.fold<int>(0, (sum, i) => sum + i.lineTotalPaise);
-            final taxPaise = (subtotalPaise * 5) ~/ 100;
-            final totalPaise = subtotalPaise + taxPaise;
+            final isInclusive = order.isTaxInclusive;
+            final taxBps = order.taxBps;
+            final taxableBasePaise = (isInclusive && taxBps > 0)
+                ? (subtotalPaise * 10000) ~/ (10000 + taxBps)
+                : subtotalPaise;
+            final taxPaise = taxBps == 0
+                ? 0
+                : (isInclusive ? (subtotalPaise - taxableBasePaise) : (subtotalPaise * taxBps) ~/ 10000);
+            final totalPaise = isInclusive ? subtotalPaise : (subtotalPaise + taxPaise);
 
             return Padding(
               padding: EdgeInsets.only(
@@ -519,15 +574,26 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Subtotal:', style: theme.textTheme.bodyMedium),
-                      Text(CurrencyFormatter.formatPaise(subtotalPaise), style: theme.textTheme.bodyMedium),
+                      Text(
+                        isInclusive && taxBps > 0 ? 'Taxable Base:' : 'Subtotal:',
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                      Text(
+                        CurrencyFormatter.formatPaise(isInclusive && taxBps > 0 ? taxableBasePaise : subtotalPaise),
+                        style: theme.textTheme.bodyMedium,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('GST (5%):', style: theme.textTheme.bodyMedium),
+                      Text(
+                        taxBps > 0
+                            ? 'GST (${(taxBps / 100).toStringAsFixed(1)}%)${isInclusive ? ' [Included]' : ''}:'
+                            : 'Tax (Exempt):',
+                        style: theme.textTheme.bodyMedium,
+                      ),
                       Text(CurrencyFormatter.formatPaise(taxPaise), style: theme.textTheme.bodyMedium),
                     ],
                   ),
@@ -709,6 +775,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     ),
                   )
                 : ListView.separated(
+                    physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                    cacheExtent: 600,
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
                     itemCount: orders.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
@@ -716,12 +784,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       final order = orders[index];
                       final isCompleted = order.status == OrderStatus.completed || order.status == OrderStatus.paid;
 
-                      return BouncingButton(
-                        onPressed: () {
-                          NativeApiChannel.triggerNativeHaptic();
-                          _showOrderDetailsDialog(context, order);
-                        },
-                        child: Card(
+                      return RepaintBoundary(
+                        child: BouncingButton(
+                          onPressed: () {
+                            NativeApiChannel.triggerNativeHaptic();
+                            _showOrderDetailsDialog(context, order);
+                          },
+                          child: Card(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                             side: order.isDeleted
@@ -915,8 +984,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
                             ),
                           ),
                         ),
-                      );
-                    },
+                      ),
+                    );
+                  },
                   ),
           ),
         ],

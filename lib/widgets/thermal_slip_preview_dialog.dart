@@ -78,12 +78,18 @@ class _ThermalSlipPreviewDialogState extends State<ThermalSlipPreviewDialog> {
     final order = widget.order;
     if (order == null) return '';
 
+    final isInclusive = order.isTaxInclusive && order.taxBps > 0;
+    final taxableLabel = isInclusive ? 'Taxable Base' : 'Subtotal';
+    final taxableAmount = isInclusive ? order.taxableBaseRupees : order.subtotalRupees;
     final taxTreatment = order.isTaxInclusive ? 'Incl. in Price' : 'Added at checkout';
     final gstLine = order.taxBps > 0
         ? 'GST (${(order.taxBps / 100).toStringAsFixed(1)}% - $taxTreatment): ₹${order.taxRupees.toStringAsFixed(2)}\n'
           '  (CGST: ₹${order.cgstRupees.toStringAsFixed(2)} + SGST: ₹${order.sgstRupees.toStringAsFixed(2)})'
         : 'Tax: ₹0.00 (Non-GST / Exempt)';
 
+    final discountLine = order.discountPaise > 0
+        ? 'Discount: -₹${order.discountRupees.toStringAsFixed(2)}\n'
+        : '';
     final roundOffLine = order.roundOffPaise != 0
         ? 'Round Off: ${order.roundOffPaise > 0 ? "+" : ""}₹${order.roundOffRupees.toStringAsFixed(2)}\n'
         : '';
@@ -112,9 +118,9 @@ ${order.items.map((i) {
       return '${i.quantity}x  $name ₹${i.lineTotalRupees.toStringAsFixed(0)}';
     }).join('\n')}
 --------------------------------
-Subtotal: ₹${order.subtotalRupees.toStringAsFixed(2)}
+$taxableLabel: ₹${taxableAmount.toStringAsFixed(2)}
 $gstLine
-${roundOffLine}GRAND TOTAL: ₹${order.totalRupees.toStringAsFixed(0)}
+$discountLine${roundOffLine}GRAND TOTAL: ₹${order.totalRupees.toStringAsFixed(0)}
 Payment Mode: ${pMethod.name.toUpperCase()}
 ================================
      Thank You! Visit Again.
@@ -579,32 +585,42 @@ Payment Mode: ${pMethod.name.toUpperCase()}
         const SizedBox(height: 6),
 
         // Financial Breakdown
-        _buildAmountRow('Subtotal', '₹${order.subtotalRupees.toStringAsFixed(2)}'),
-
-        if (order.taxBps > 0) ...[
+        if (order.isTaxInclusive && order.taxBps > 0) ...[
+          _buildAmountRow('Taxable Base (Net)', '₹${order.taxableBaseRupees.toStringAsFixed(2)}'),
           _buildAmountRow(
-            'CGST (${(order.taxBps / 200).toStringAsFixed(1)}%)',
+            'CGST (${(order.taxBps / 200).toStringAsFixed(1)}%) [Incl]',
             '₹${order.cgstRupees.toStringAsFixed(2)}',
           ),
           _buildAmountRow(
-            'SGST (${(order.taxBps / 200).toStringAsFixed(1)}%)',
+            'SGST (${(order.taxBps / 200).toStringAsFixed(1)}%) [Incl]',
             '₹${order.sgstRupees.toStringAsFixed(2)}',
           ),
-          if (order.isTaxInclusive)
-            const Padding(
-              padding: EdgeInsets.only(left: 8, bottom: 2),
-              child: Text(
-                '*(Taxes included in menu prices)',
-                style: TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 9,
-                  fontStyle: FontStyle.italic,
-                  color: Color(0xFF6B7280),
-                ),
+          const Padding(
+            padding: EdgeInsets.only(left: 8, bottom: 2),
+            child: Text(
+              '*(Taxes included in menu prices)',
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 9,
+                fontStyle: FontStyle.italic,
+                color: Color(0xFF6B7280),
               ),
             ),
+          ),
         ] else ...[
-          _buildAmountRow('Tax (Exempt)', '₹0.00'),
+          _buildAmountRow('Subtotal', '₹${order.subtotalRupees.toStringAsFixed(2)}'),
+          if (order.taxBps > 0) ...[
+            _buildAmountRow(
+              'CGST (${(order.taxBps / 200).toStringAsFixed(1)}%)',
+              '₹${order.cgstRupees.toStringAsFixed(2)}',
+            ),
+            _buildAmountRow(
+              'SGST (${(order.taxBps / 200).toStringAsFixed(1)}%)',
+              '₹${order.sgstRupees.toStringAsFixed(2)}',
+            ),
+          ] else ...[
+            _buildAmountRow('Tax (Exempt)', '₹0.00'),
+          ],
         ],
 
         if (order.discountPaise > 0)

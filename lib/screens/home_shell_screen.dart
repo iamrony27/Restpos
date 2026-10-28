@@ -115,23 +115,9 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
             ),
             const VerticalDivider(thickness: 1, width: 1),
             Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 280),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                transitionBuilder: (child, animation) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0.04, 0),
-                        end: Offset.zero,
-                      ).animate(animation),
-                      child: child,
-                    ),
-                  );
-                },
-                child: screens[_currentIndex],
+              child: IndexedStack(
+                index: _currentIndex,
+                children: screens,
               ),
             ),
           ],
@@ -144,23 +130,9 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
       extendBody: true,
       body: NotificationListener<UserScrollNotification>(
         onNotification: _handleScrollNotification,
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 280),
-          switchInCurve: Curves.easeOutCubic,
-          switchOutCurve: Curves.easeInCubic,
-          transitionBuilder: (child, animation) {
-            return FadeTransition(
-              opacity: animation,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0.04, 0),
-                  end: Offset.zero,
-                ).animate(animation),
-                child: child,
-              ),
-            );
-          },
-          child: screens[_currentIndex],
+        child: IndexedStack(
+          index: _currentIndex,
+          children: screens,
         ),
       ),
       bottomNavigationBar: AnimatedSlide(

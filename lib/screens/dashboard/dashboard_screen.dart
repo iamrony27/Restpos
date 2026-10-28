@@ -215,10 +215,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       body: ListView(
+        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
         children: [
           // Circular Donut Sales Chart: Item Wise (Qty) vs Amount Wise (₹)
-          _buildCircularSalesChart(theme, orderProvider, bestsellers),
+          RepaintBoundary(
+            child: _buildCircularSalesChart(theme, orderProvider, bestsellers),
+          ),
 
           const SizedBox(height: 16),
 
