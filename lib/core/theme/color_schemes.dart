@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class CulinaryColors {
   static const Color tandoorOrange = Color(0xFFFF5722);
   static const Color flameOrange = Color(0xFFEA580C);
+  static const Color tandoorSpice = Color(0xFFEA580C);
   static const Color turmericGold = Color(0xFFF59E0B);
   static const Color emeraldGreen = Color(0xFF10B981);
   static const Color crimsonRed = Color(0xFFE11D48);

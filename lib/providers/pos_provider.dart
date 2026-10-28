@@ -39,8 +39,23 @@ class PosProvider extends ChangeNotifier {
   bool get isGstEnabled => _profile.isGstEnabled;
   double get gstRatePercent => _profile.gstRatePercent;
   bool get isRoundOffEnabled => _profile.isRoundOffEnabled;
+  bool get isTaxInclusive => _profile.isTaxInclusive;
   String get fssaiNumber => _profile.fssai;
   String get gstin => _profile.gstin;
+
+  bool _isPrinterConnected = true;
+  bool get isPrinterConnected => _isPrinterConnected;
+  String get printerName => 'Thermal ESC/POS 58mm';
+
+  void togglePrinterConnection() {
+    _isPrinterConnected = !_isPrinterConnected;
+    notifyListeners();
+  }
+
+  void setPrinterConnected(bool connected) {
+    _isPrinterConnected = connected;
+    notifyListeners();
+  }
 
   int get totalItemCount => _cart.fold(0, (sum, line) => sum + line.quantity);
 
@@ -48,15 +63,29 @@ class PosProvider extends ChangeNotifier {
 
   int get taxBps => _profile.isGstEnabled ? (_profile.gstRatePercent * 100).round() : 0;
 
+  int get taxableBasePaise {
+    final net = (subtotalPaise - _discountPaise).clamp(0, double.infinity).toInt();
+    if (!_profile.isGstEnabled || !_profile.isTaxInclusive || taxBps == 0) {
+      return net;
+    }
+    return (net * 10000) ~/ (10000 + taxBps);
+  }
+
   int get taxPaise {
-    if (!_profile.isGstEnabled) return 0;
-    final taxable = (subtotalPaise - _discountPaise).clamp(0, double.infinity).toInt();
-    return (taxable * taxBps) ~/ 10000;
+    if (!_profile.isGstEnabled || taxBps == 0) return 0;
+    final net = (subtotalPaise - _discountPaise).clamp(0, double.infinity).toInt();
+    if (_profile.isTaxInclusive) {
+      return net - taxableBasePaise;
+    }
+    return (net * taxBps) ~/ 10000;
   }
 
   int get exactTotalPaise {
-    final sub = (subtotalPaise - _discountPaise).clamp(0, double.infinity).toInt();
-    return sub + taxPaise;
+    final net = (subtotalPaise - _discountPaise).clamp(0, double.infinity).toInt();
+    if (_profile.isTaxInclusive) {
+      return net;
+    }
+    return net + taxPaise;
   }
 
   int get roundOffAdjustmentPaise {
@@ -67,6 +96,7 @@ class PosProvider extends ChangeNotifier {
 
   int get totalPaise => exactTotalPaise + roundOffAdjustmentPaise;
 
+  double get taxableBaseRupees => taxableBasePaise / 100.0;
   double get subtotalRupees => subtotalPaise / 100.0;
   double get taxRupees => taxPaise / 100.0;
   double get discountRupees => _discountPaise / 100.0;
@@ -80,6 +110,11 @@ class PosProvider extends ChangeNotifier {
 
   void setGstEnabled(bool enabled) {
     _profile = _profile.copyWith(isGstEnabled: enabled);
+    notifyListeners();
+  }
+
+  void setTaxInclusive(bool isInclusive) {
+    _profile = _profile.copyWith(isTaxInclusive: isInclusive);
     notifyListeners();
   }
 
@@ -199,6 +234,7 @@ class PosProvider extends ChangeNotifier {
       taxBps: taxBps,
       discountPaise: _discountPaise,
       roundOffPaise: roundOffAdjustmentPaise,
+      isTaxInclusive: _profile.isTaxInclusive,
       createdAt: DateTime.now(),
       completedAt: DateTime.now(),
       paymentMethod: paymentMethod,

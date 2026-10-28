@@ -32,6 +32,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
   // Step 2: Tax & Compliance
   late bool _isGstEnabled;
   late double _gstRatePercent;
+  late bool _isTaxInclusive;
   late final TextEditingController _gstinController;
   late final TextEditingController _fssaiController;
 
@@ -54,6 +55,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
 
     _isGstEnabled = p.isGstEnabled;
     _gstRatePercent = p.gstRatePercent;
+    _isTaxInclusive = p.isTaxInclusive;
     _gstinController = TextEditingController(text: p.gstin);
     _fssaiController = TextEditingController(text: p.fssai);
 
@@ -113,6 +115,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
       isGstEnabled: _isGstEnabled,
       gstRatePercent: _gstRatePercent,
       defaultTaxBps: (_gstRatePercent * 100).round(),
+      isTaxInclusive: _isTaxInclusive,
       gstin: _gstinController.text.trim(),
       fssai: _fssaiController.text.trim(),
       isRoundOffEnabled: _isRoundOffEnabled,
@@ -542,6 +545,53 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  // Tax Mode: Inclusive vs Exclusive
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Tax Calculation Mode',
+                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _isTaxInclusive
+                              ? 'Inclusive: Menu prices already include GST (MRP style). No extra tax added at checkout.'
+                              : 'Exclusive: GST is added on top of menu prices at checkout.',
+                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                        ),
+                        const SizedBox(height: 10),
+                        SegmentedButton<bool>(
+                          style: const ButtonStyle(
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          segments: const [
+                            ButtonSegment(
+                              value: true,
+                              icon: Icon(Icons.check_circle_outline_rounded, size: 16),
+                              label: Text('Tax Inclusive'),
+                            ),
+                            ButtonSegment(
+                              value: false,
+                              icon: Icon(Icons.add_circle_outline_rounded, size: 16),
+                              label: Text('Tax Exclusive'),
+                            ),
+                          ],
+                          selected: {_isTaxInclusive},
+                          onSelectionChanged: (set) {
+                            setState(() => _isTaxInclusive = set.first);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ],
             ),
@@ -803,7 +853,10 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                 _buildReviewRow('Restaurant Name', _nameController.text.isEmpty ? 'Spice Garden' : _nameController.text),
                 _buildReviewRow('Tagline', _taglineController.text),
                 _buildReviewRow('GST Status', _isGstEnabled ? 'Enabled (${_gstRatePercent.toStringAsFixed(0)}%)' : 'Disabled (Non-GST)'),
-                if (_isGstEnabled) _buildReviewRow('GSTIN', _gstinController.text),
+                if (_isGstEnabled) ...[
+                  _buildReviewRow('GSTIN', _gstinController.text),
+                  _buildReviewRow('Tax Mode', _isTaxInclusive ? 'Inclusive of Tax' : 'Exclusive (Added to bill)'),
+                ],
                 _buildReviewRow('FSSAI Number', _fssaiController.text.isEmpty ? 'Not Provided' : _fssaiController.text),
                 _buildReviewRow('Round Off', _isRoundOffEnabled ? 'Enabled (Nearest ₹)' : 'Disabled'),
                 _buildReviewRow('UPI VPA', _upiIdController.text),

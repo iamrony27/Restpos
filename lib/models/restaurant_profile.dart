@@ -13,6 +13,7 @@ class RestaurantProfile {
   final double gstRatePercent;
   final bool isRoundOffEnabled;
   final bool isSetupCompleted;
+  final bool isTaxInclusive; // true = Inclusive of GST, false = Exclusive of GST
   final int defaultTaxBps; // e.g. 500 = 5%
 
   const RestaurantProfile({
@@ -30,6 +31,7 @@ class RestaurantProfile {
     this.gstRatePercent = 5.0,
     this.isRoundOffEnabled = true,
     this.isSetupCompleted = true,
+    this.isTaxInclusive = false,
     this.defaultTaxBps = 500,
   });
 
@@ -48,6 +50,7 @@ class RestaurantProfile {
     double? gstRatePercent,
     bool? isRoundOffEnabled,
     bool? isSetupCompleted,
+    bool? isTaxInclusive,
     int? defaultTaxBps,
   }) {
     return RestaurantProfile(
@@ -65,6 +68,7 @@ class RestaurantProfile {
       gstRatePercent: gstRatePercent ?? this.gstRatePercent,
       isRoundOffEnabled: isRoundOffEnabled ?? this.isRoundOffEnabled,
       isSetupCompleted: isSetupCompleted ?? this.isSetupCompleted,
+      isTaxInclusive: isTaxInclusive ?? this.isTaxInclusive,
       defaultTaxBps: defaultTaxBps ?? this.defaultTaxBps,
     );
   }
@@ -85,6 +89,7 @@ class RestaurantProfile {
       'gstRatePercent': gstRatePercent,
       'isRoundOffEnabled': isRoundOffEnabled,
       'isSetupCompleted': isSetupCompleted,
+      'isTaxInclusive': isTaxInclusive,
       'defaultTaxBps': defaultTaxBps,
     };
   }
@@ -105,6 +110,7 @@ class RestaurantProfile {
       gstRatePercent: (map['gstRatePercent'] as num?)?.toDouble() ?? 5.0,
       isRoundOffEnabled: map['isRoundOffEnabled'] as bool? ?? true,
       isSetupCompleted: map['isSetupCompleted'] as bool? ?? true,
+      isTaxInclusive: map['isTaxInclusive'] as bool? ?? false,
       defaultTaxBps: map['defaultTaxBps'] as int? ?? 500,
     );
   }

@@ -68,5 +68,32 @@ void main() {
       expect(pos.taxPaise, 0);
       expect(pos.totalPaise, 38000);
     });
+
+    test('Tax Inclusive mode splits GST without adding to total', () {
+      final pos = PosProvider();
+      pos.updateProfile(const RestaurantProfile(
+        isGstEnabled: true,
+        gstRatePercent: 5.0,
+        isTaxInclusive: true,
+        isRoundOffEnabled: false,
+      ));
+
+      // Item worth ₹105.00 MRP (10500 paise)
+      const item = MenuItem(
+        id: 999,
+        categoryId: 1,
+        name: 'Beverage Special',
+        pricePaise: 10500,
+      );
+      pos.addToCart(item);
+
+      // Total payable remains ₹105.00
+      expect(pos.isTaxInclusive, true);
+      expect(pos.totalPaise, 10500);
+      // Taxable base = 10500 * 10000 / 10500 = 10000 paise (₹100.00)
+      expect(pos.taxableBasePaise, 10000);
+      // Tax = 500 paise (₹5.00)
+      expect(pos.taxPaise, 500);
+    });
   });
 }

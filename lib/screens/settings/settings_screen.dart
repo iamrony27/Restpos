@@ -5,6 +5,7 @@ import '../../core/animations/smooth_page_route.dart';
 import '../../core/channels/native_api_channel.dart';
 import '../../core/theme/color_schemes.dart';
 import '../../providers/pos_provider.dart';
+import '../reports/sales_report_screen.dart';
 import '../setup/setup_wizard_screen.dart';
 import 'wifi_debugging_guide_screen.dart';
 
@@ -224,6 +225,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
+          const SizedBox(height: 16),
+
+          // Sales & GST PDF Tax Report Card (Prominent CTA)
+          BouncingButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                SmoothPageRoute(page: const SalesReportScreen()),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [CulinaryColors.flameOrange, CulinaryColors.tandoorSpice],
+                ),
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: CulinaryColors.flameOrange.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Colors.white,
+                    radius: 22,
+                    child: Icon(Icons.picture_as_pdf_rounded, color: CulinaryColors.flameOrange, size: 24),
+                  ),
+                  SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Sales & GST Tax PDF Reports',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Monthly, Quarterly & Yearly statutory filing statements',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                ],
+              ),
+            ),
+          ),
+
           const SizedBox(height: 20),
 
           // GST & Tax Compliance Section
@@ -293,6 +349,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           },
                         );
                       }).toList(),
+                    ),
+                    const SizedBox(height: 14),
+                    // Tax Mode: Inclusive vs Exclusive
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Tax Treatment Mode',
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                            ),
+                            Text(
+                              pos.isTaxInclusive
+                                  ? 'Prices INCLUDE GST (Base + Tax = Menu Price)'
+                                  : 'Prices EXCLUDE GST (GST added at billing)',
+                              style: TextStyle(fontSize: 11, color: theme.colorScheme.outline),
+                            ),
+                          ],
+                        ),
+                        SegmentedButton<bool>(
+                          segments: const [
+                            ButtonSegment(
+                              value: false,
+                              label: Text('Excl.'),
+                            ),
+                            ButtonSegment(
+                              value: true,
+                              label: Text('Incl.'),
+                            ),
+                          ],
+                          selected: {pos.isTaxInclusive},
+                          onSelectionChanged: (set) {
+                            NativeApiChannel.triggerNativeHaptic();
+                            pos.setTaxInclusive(set.first);
+                          },
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 10),
                     _buildProfileRow('GSTIN Number', profile.gstin),

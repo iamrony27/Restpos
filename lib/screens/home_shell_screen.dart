@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import '../core/channels/native_api_channel.dart';
+import '../core/theme/color_schemes.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'orders/orders_screen.dart';
 import 'pos/pos_screen.dart';
@@ -22,6 +24,7 @@ class HomeShellScreen extends StatefulWidget {
 
 class _HomeShellScreenState extends State<HomeShellScreen> {
   int _currentIndex = 0;
+  bool _isBottomBarVisible = true;
 
   void _onTabSelected(int index) {
     if (_currentIndex == index) return;
@@ -29,6 +32,17 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
     setState(() {
       _currentIndex = index;
     });
+  }
+
+  bool _handleScrollNotification(UserScrollNotification notification) {
+    if (notification.direction == ScrollDirection.reverse && _isBottomBarVisible) {
+      // User is scrolling down -> Hide bar
+      setState(() => _isBottomBarVisible = false);
+    } else if (notification.direction == ScrollDirection.forward && !_isBottomBarVisible) {
+      // User is scrolling up -> Show bar
+      setState(() => _isBottomBarVisible = true);
+    }
+    return false;
   }
 
   @override
@@ -117,56 +131,116 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
       );
     }
 
-    // Phone Bottom NavigationBar
+    // Phone Floating FAB-Style Rounded NavigationBar with Scroll Auto-Hide
     return Scaffold(
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 280),
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeInCubic,
-        transitionBuilder: (child, animation) {
-          return FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0.04, 0),
-                end: Offset.zero,
-              ).animate(animation),
-              child: child,
-            ),
-          );
-        },
-        child: screens[_currentIndex],
+      extendBody: true,
+      body: NotificationListener<UserScrollNotification>(
+        onNotification: _handleScrollNotification,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 280),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          transitionBuilder: (child, animation) {
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0.04, 0),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
+              ),
+            );
+          },
+          child: screens[_currentIndex],
+        ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: _onTabSelected,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard_rounded),
-            label: 'Dashboard',
+      bottomNavigationBar: AnimatedSlide(
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeInOutCubic,
+        offset: _isBottomBarVisible ? Offset.zero : const Offset(0, 1.4),
+        child: SafeArea(
+          child: Container(
+            height: 66,
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            decoration: BoxDecoration(
+              color: widget.isDarkMode
+                  ? const Color(0xFF1E1E24)
+                  : const Color(0xFFFAF8F5),
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(
+                color: theme.colorScheme.outlineVariant.withOpacity(0.4),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(widget.isDarkMode ? 0.45 : 0.12),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(32),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildNavItem(0, Icons.dashboard_outlined, Icons.dashboard_rounded, 'Dashboard'),
+                  _buildNavItem(1, Icons.point_of_sale_outlined, Icons.point_of_sale_rounded, 'POS'),
+                  _buildNavItem(2, Icons.table_restaurant_outlined, Icons.table_restaurant_rounded, 'Tables'),
+                  _buildNavItem(3, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Orders'),
+                  _buildNavItem(4, Icons.settings_outlined, Icons.settings_rounded, 'Settings'),
+                ],
+              ),
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.point_of_sale_outlined),
-            selectedIcon: Icon(Icons.point_of_sale_rounded),
-            label: 'POS',
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData outlineIcon, IconData filledIcon, String label) {
+    final isSelected = _currentIndex == index;
+    final color = isSelected ? CulinaryColors.flameOrange : const Color(0xFF78716C);
+
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _onTabSelected(index),
+          splashColor: CulinaryColors.flameOrange.withOpacity(0.12),
+          highlightColor: Colors.transparent,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                padding: EdgeInsets.symmetric(horizontal: isSelected ? 16 : 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? CulinaryColors.flameOrange.withOpacity(0.16)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  isSelected ? filledIcon : outlineIcon,
+                  size: 22,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(Icons.table_restaurant_outlined),
-            selectedIcon: Icon(Icons.table_restaurant_rounded),
-            label: 'Tables',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long_rounded),
-            label: 'Orders',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings_rounded),
-            label: 'Settings',
-          ),
-        ],
+        ),
       ),
     );
   }

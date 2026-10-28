@@ -311,4 +311,9 @@ class MenuProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void deleteItem(int itemId) {
+    _items.removeWhere((it) => it.id == itemId);
+    notifyListeners();
+  }
 }

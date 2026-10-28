@@ -44,8 +44,9 @@ class _PaymentModalState extends State<PaymentModal> {
     final posProvider = Provider.of<PosProvider>(context, listen: false);
     final profile = posProvider.profile;
 
+    final taxTreatment = widget.order.isTaxInclusive ? 'Incl. in Price' : 'Added at checkout';
     final gstLine = widget.order.taxBps > 0
-        ? 'GST (${(widget.order.taxBps / 100).toStringAsFixed(1)}%): ₹${widget.order.taxRupees.toStringAsFixed(2)}'
+        ? 'GST (${(widget.order.taxBps / 100).toStringAsFixed(1)}% - $taxTreatment): ₹${widget.order.taxRupees.toStringAsFixed(2)}\n    (CGST: ₹${widget.order.cgstRupees.toStringAsFixed(2)} + SGST: ₹${widget.order.sgstRupees.toStringAsFixed(2)})'
         : 'Tax: ₹0.00 (Non-GST / Exempt)';
 
     final roundOffLine = widget.order.roundOffPaise != 0
