@@ -194,7 +194,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                                     style: GoogleFonts.outfit(
                                       fontSize: 34,
                                       fontWeight: FontWeight.w900,
-                                      color: const Color(0xFFF59E0B), // Saffron Amber
+                                      color: CulinaryColors.restOrange,
                                       letterSpacing: 1.2,
                                     ),
                                   ),
@@ -222,7 +222,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                                 borderRadius: BorderRadius.circular(4),
                                 child: const LinearProgressIndicator(
                                   backgroundColor: Color(0xFF1E293B),
-                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF59E0B)),
+                                  valueColor: AlwaysStoppedAnimation<Color>(CulinaryColors.restOrange),
                                   minHeight: 3,
                                 ),
                               ),

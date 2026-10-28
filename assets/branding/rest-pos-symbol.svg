@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Rest POS - Master Monochrome Brand Vector Symbol -->
+  <!-- Color: Solid #FF6B00 | Single Color Flat Vector Design -->
+  <g fill="#FF6B00">
+    <!-- POS Terminal Monitor Bezel (Outer Frame with Cutout Screen) -->
+    <path fill-rule="evenodd" d="
+      M 124,72
+      C 95,72 72,95 72,124
+      L 72,308
+      C 72,337 95,360 124,360
+      L 388,360
+      C 417,360 440,337 440,308
+      L 440,124
+      C 440,95 417,72 388,72
+      Z
+      M 112,112
+      C 112,103 119,96 128,96
+      L 384,96
+      C 393,96 400,103 400,112
+      L 400,320
+      C 400,329 393,336 384,336
+      L 128,336
+      C 119,336 112,329 112,320
+      Z
+    "/>
+
+    <!-- POS Integrated Card Reader (Right side contactless/chip dock) -->
+    <rect x="448" y="156" width="22" height="108" rx="11"/>
+
+    <!-- POS Terminal Stand (Angled Neck) -->
+    <path d="
+      M 216,360
+      L 196,432
+      L 316,432
+      L 296,360
+      Z
+    "/>
+
+    <!-- POS Countertop Base / Foot -->
+    <rect x="136" y="424" width="240" height="36" rx="18"/>
+
+    <!-- Inside Screen: Central Dining Plate (Solid rim with concentric inner cutout) -->
+    <path fill-rule="evenodd" d="
+      M 256,150
+      C 220,150 191,179 191,215
+      C 191,251 220,280 256,280
+      C 292,280 321,251 321,215
+      C 321,179 292,150 256,150
+      Z
+      M 256,174
+      C 234,174 215,193 215,215
+      C 215,237 234,256 256,256
+      C 278,256 297,237 297,215
+      C 297,193 278,174 256,174
+      Z
+    "/>
+
+    <!-- Inside Plate: Center Dish Accent Dot -->
+    <circle cx="256" cy="215" r="14"/>
+
+    <!-- Inside Screen (Left): Dining Fork -->
+    <!-- 3 Tines, Shoulder, and Ergonomic Handle -->
+    <path d="
+      M 148,142
+      C 148,137 152,133 156,133
+      C 160,133 164,137 164,142
+      L 164,180
+      L 168,180
+      L 168,142
+      C 168,137 172,133 176,133
+      C 180,133 184,137 184,142
+      L 184,180
+      L 188,180
+      L 188,142
+      C 188,137 192,133 196,133
+      C 200,133 204,137 204,142
+      L 204,188
+      C 204,204 194,217 182,221
+      L 182,284
+      C 182,289 178,293 173,293
+      C 168,293 164,289 164,284
+      L 164,221
+      C 152,217 142,204 142,188
+      L 142,142
+      C 142,137 146,133 148,142
+      Z
+    "/>
+
+    <!-- Inside Screen (Right): Dining Knife -->
+    <!-- Curved Blade, Bolster, and Matching Handle -->
+    <path d="
+      M 340,134
+      C 358,136 372,154 372,188
+      C 372,214 362,228 350,233
+      L 350,284
+      C 350,289 346,293 341,293
+      C 336,293 332,289 332,284
+      L 332,143
+      C 332,138 336,134 340,134
+      Z
+    "/>
+  </g>
+</svg>

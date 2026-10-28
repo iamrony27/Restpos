@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 class CulinaryColors {
+  static const Color restOrange = Color(0xFFFF6B00); // Master Rest POS Brand Color
   static const Color tandoorOrange = Color(0xFFFF5722);
   static const Color flameOrange = Color(0xFFEA580C);
   static const Color tandoorSpice = Color(0xFFEA580C);

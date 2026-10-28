@@ -1,0 +1,39 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <!-- Rest POS Monochrome Adaptive Icon (Material You Themed Icons) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M148,96 C124,96 104,116 104,140 L104,292 C104,316 124,336 148,336 L364,336 C388,336 408,316 408,292 L408,140 C408,116 388,96 364,96 Z M136,128 C136,121 142,115 149,115 L363,115 C370,115 376,121 376,128 L376,304 C376,311 370,317 363,317 L149,317 C142,317 136,311 136,304 Z"/>
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M414,166 C420,166 425,171 425,177 L425,255 C425,261 420,266 414,266 C408,266 403,261 403,255 L403,177 C403,171 408,166 414,166 Z"/>
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M224,336 L208,396 L304,396 L288,336 Z"/>
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M174,390 C165,390 158,397 158,406 C158,415 165,422 174,422 L338,422 C347,422 354,415 354,406 C354,397 347,390 338,390 Z"/>
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M256,162 C226,162 202,186 202,216 C202,246 226,270 256,270 C286,270 310,246 310,216 C310,186 286,162 256,162 Z M256,182 C237,182 222,197 222,216 C222,235 237,250 256,250 C275,250 290,235 290,216 C290,197 275,182 256,182 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M256,204 C249.4,204 244,209.4 244,216 C244,222.6 249.4,228 256,228 C262.6,228 268,222.6 268,216 C268,209.4 262.6,204 256,204 Z"/>
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M166,156 C166,152 169,149 172,149 C175,149 178,152 178,156 L178,187 L181,187 L181,156 C181,152 184,149 187,149 C190,149 193,152 193,156 L193,187 L196,187 L196,156 C196,152 199,149 202,149 C205,149 208,152 208,156 L208,193 C208,206 199,217 189,220 L189,271 C189,275 186,278 182,278 C178,278 175,275 175,271 L175,220 C165,217 156,206 156,193 L156,156 C156,152 166,149 166,156 Z"/>
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M325,149 C340,151 351,165 351,193 C351,214 343,226 333,230 L333,271 C333,275 330,278 326,278 C322,278 319,275 319,271 L319,156 C319,152 322,149 325,149 Z"/>
+</vector>

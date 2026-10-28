@@ -1,14 +1,19 @@
 {
-    "name": "flutter_restaurant_pos",
-    "short_name": "flutter_restaurant_pos",
+    "name": "Rest POS",
+    "short_name": "Rest POS",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0F172A",
+    "theme_color": "#FF6B00",
+    "description": "Rest POS - Modern, offline-first Restaurant POS & Management Application.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
+        {
+            "src": "favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        },
         {
             "src": "icons/Icon-192.png",
             "sizes": "192x192",
