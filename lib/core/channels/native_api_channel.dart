@@ -90,15 +90,6 @@ class NativeApiChannel {
     }
   }
 
-  /// Dispatches native Android Intent to open Wi-Fi settings for wireless debugging
-  static Future<bool> openWifiSettings() async {
-    try {
-      final bool? success = await _channel.invokeMethod<bool>('openWifiSettings');
-      return success ?? false;
-    } on PlatformException {
-      return false;
-    }
-  }
 
   /// Dispatches native Android Intent to open Bluetooth settings for pairing thermal printers
   static Future<bool> openBluetoothSettings() async {

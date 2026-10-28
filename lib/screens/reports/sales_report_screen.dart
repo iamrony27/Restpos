@@ -94,8 +94,8 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
     final profile = pos.profile;
     final currencyFormatter = NumberFormat.currency(symbol: '₹', decimalDigits: 2);
 
-    // Compute genuine aggregate figures directly from active/completed orders
-    final allOrders = orderProvider.orders.where((o) => !o.isDeleted && o.status != OrderStatus.cancelled).toList();
+    // Compute genuine aggregate figures directly from completed/paid bills
+    final allOrders = orderProvider.completedOrders;
 
     List<Order> filteredOrders;
     if (_selectedPeriod.contains('All Orders') || _selectedPeriod.contains('All Time')) {

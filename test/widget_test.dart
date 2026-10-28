@@ -13,6 +13,11 @@ import 'package:flutter_restaurant_pos/providers/order_provider.dart';
 import 'package:provider/provider.dart';
 
 
+import 'package:flutter_restaurant_pos/models/menu_category.dart';
+import 'package:flutter_restaurant_pos/core/utils/currency_formatter.dart';
+import 'package:flutter_restaurant_pos/core/utils/upi_helper.dart';
+import 'package:flutter_restaurant_pos/services/report_pdf_service.dart';
+import 'package:flutter_restaurant_pos/services/backup_restore_service.dart';
 import 'package:flutter_restaurant_pos/services/local_storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -350,6 +355,168 @@ void main() {
     expect(loadedItems.first.name, equals('Chef Special Kheer'));
     expect(loadedItems.first.pricePaise, equals(12000));
   });
+
+  group('UpiHelper Bharat QR Generation', () {
+    test('Builds valid standard UPI payment URI string', () {
+      final uri = UpiHelper.buildUpiQrString(
+        upiId: 'merchant@upi',
+        payeeName: 'Rest POS Cafe',
+        amountRupees: 250.50,
+        orderNumber: 'ORD-101',
+      );
+      expect(uri, contains('upi://pay?'));
+      expect(uri, contains('pa=merchant%40upi'));
+      expect(uri, contains('pn=Rest%20POS%20Cafe'));
+      expect(uri, contains('am=250.50'));
+      expect(uri, contains('cu=INR'));
+      expect(uri, contains('tn=Bill%20ORD-101'));
+    });
+  });
+
+  group('CurrencyFormatter Exact Formatting', () {
+    test('Formats integer amounts without decimal zeroes', () {
+      expect(CurrencyFormatter.formatPaise(10000), equals('₹100'));
+      expect(CurrencyFormatter.formatRupees(250.0), equals('₹250'));
+    });
+
+    test('Formats fractional amounts with 2 decimal places', () {
+      expect(CurrencyFormatter.formatPaise(10050), equals('₹100.50'));
+      expect(CurrencyFormatter.formatRupees(250.75), equals('₹250.75'));
+    });
+  });
+
+  group('ReportPdfService PDF Synthesis', () {
+    test('Generates valid non-empty A4 Sales & GST Report PDF bytes', () async {
+      const profile = RestaurantProfile(
+        name: 'The Grand Tandoor',
+        tagline: 'Authentic Indian Cuisine',
+        gstin: '07AAAAA0000A1Z5',
+        fssai: '10019011000555',
+        phone: '9876543210',
+        address: 'Connaught Place, New Delhi',
+        isGstEnabled: true,
+        gstRatePercent: 5.0,
+        isTaxInclusive: true,
+      );
+
+      final pdfBytes = await ReportPdfService.generateSalesReportBytes(
+        profile: profile,
+        periodType: 'Monthly',
+        periodName: 'October 2026',
+        totalOrders: 42,
+        grossSalesRupees: 15420.0,
+        taxableBaseRupees: 14685.71,
+        cgstRupees: 367.14,
+        sgstRupees: 367.14,
+        totalGstRupees: 734.28,
+        roundOffRupees: 0.0,
+        netRevenueRupees: 15420.0,
+        isTaxInclusive: true,
+        categorySales: {
+          'Main Course': 8500.0,
+          'Starters': 4200.0,
+          'Beverages': 2720.0,
+        },
+        paymentBreakdown: {
+          'UPI (Bharat QR)': 10200.0,
+          'Cash Tender': 3820.0,
+          'Debit / Credit Card': 1400.0,
+        },
+      );
+
+      expect(pdfBytes, isNotNull);
+      expect(pdfBytes.length, greaterThan(2000));
+      // PDF standard magic bytes: %PDF-
+      expect(pdfBytes.sublist(0, 4), equals([0x25, 0x50, 0x44, 0x46]));
+    });
+  });
+
+  group('BackupData Serialization & Roundtrip', () {
+    test('Correctly serializes and deserializes database backup', () {
+      const profile = RestaurantProfile(name: 'Rest POS Test Cafe', gstin: '27ABCDE1234F1Z5');
+      final categories = [const MenuCategory(id: 1, name: 'Breads', sortOrder: 1)];
+      final items = [const MenuItem(id: 101, categoryId: 1, name: 'Garlic Naan', pricePaise: 6000)];
+      final tables = [const RestaurantTable(id: 1, name: 'T-01', seatingCapacity: 4)];
+      final orders = [
+        Order(
+          id: 'ord-1',
+          orderNumber: 'ORD-0001',
+          type: OrderType.dineIn,
+          status: OrderStatus.paid,
+          items: [OrderItem(menuItem: items.first, quantity: 2, unitPricePaise: 6000)],
+          subtotalPaise: 12000,
+          taxBps: 500,
+          createdAt: DateTime(2026, 10, 29),
+        ),
+      ];
+
+      final original = BackupData(
+        version: 1,
+        exportedAt: '2026-10-29T10:00:00.000Z',
+        profile: profile,
+        categories: categories,
+        items: items,
+        tables: tables,
+        orders: orders,
+      );
+
+      final jsonStr = original.toJsonString();
+      expect(jsonStr, contains('Rest POS Test Cafe'));
+      expect(jsonStr, contains('Garlic Naan'));
+      expect(jsonStr, contains('ORD-0001'));
+
+      final restored = BackupData.fromJsonString(jsonStr);
+      expect(restored.version, equals(1));
+      expect(restored.profile.name, equals('Rest POS Test Cafe'));
+      expect(restored.categories.length, equals(1));
+      expect(restored.categories.first.name, equals('Breads'));
+      expect(restored.items.length, equals(1));
+      expect(restored.items.first.name, equals('Garlic Naan'));
+      expect(restored.tables.length, equals(1));
+      expect(restored.tables.first.name, equals('T-01'));
+      expect(restored.orders.length, equals(1));
+      expect(restored.orders.first.orderNumber, equals('ORD-0001'));
+    });
+  });
+
+  group('OrderProvider Completed Orders vs Active Unpaid Orders', () {
+    test('Items sold and revenue only count paid/completed orders', () {
+      final orderProvider = OrderProvider();
+      expect(orderProvider.itemsSoldToday, equals(0));
+      expect(orderProvider.totalRevenueRupees, equals(0.0));
+
+      const dish = MenuItem(id: 501, categoryId: 1, name: 'Paneer Tikka', pricePaise: 25000);
+
+      // 1. Open order (still dining, unpaid)
+      final openOrder = Order(
+        id: 'open-1',
+        orderNumber: 'ORD-OPEN-1',
+        type: OrderType.dineIn,
+        status: OrderStatus.open,
+        items: [OrderItem(menuItem: dish, quantity: 2, unitPricePaise: 25000)],
+        subtotalPaise: 50000,
+        createdAt: DateTime.now(),
+      );
+      orderProvider.addOrder(openOrder);
+
+      // Open orders must NOT count as items sold or revenue
+      expect(orderProvider.activeOrders.length, equals(1));
+      expect(orderProvider.completedOrders.length, equals(0));
+      expect(orderProvider.itemsSoldToday, equals(0));
+      expect(orderProvider.totalRevenueRupees, equals(0.0));
+
+      // 2. Mark order as completed / paid with Cash
+      orderProvider.updateOrderStatus('open-1', OrderStatus.completed, method: PaymentMethod.cash);
+
+      // Now it must be counted
+      expect(orderProvider.activeOrders.length, equals(0));
+      expect(orderProvider.completedOrders.length, equals(1));
+      expect(orderProvider.itemsSoldToday, equals(2));
+      expect(orderProvider.totalRevenueRupees, equals(525.0)); // 500 + 5% GST = 525
+      expect(orderProvider.paymentDistribution[PaymentMethod.cash], equals(525.0));
+    });
+  });
 }
+
 
 
