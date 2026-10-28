@@ -112,6 +112,43 @@ class TableProvider extends ChangeNotifier {
     }
   }
 
+  void addTable({
+    required String name,
+    required int seatingCapacity,
+    TableStatus status = TableStatus.available,
+  }) {
+    final nextId = _tables.isEmpty ? 1 : (_tables.map((t) => t.id).reduce((a, b) => a > b ? a : b) + 1);
+    _tables.add(RestaurantTable(
+      id: nextId,
+      name: name,
+      seatingCapacity: seatingCapacity,
+      status: status,
+    ));
+    notifyListeners();
+  }
+
+  void updateTable(
+    int tableId, {
+    required String name,
+    required int seatingCapacity,
+    TableStatus? status,
+  }) {
+    final index = _tables.indexWhere((t) => t.id == tableId);
+    if (index >= 0) {
+      _tables[index] = _tables[index].copyWith(
+        name: name,
+        seatingCapacity: seatingCapacity,
+        status: status ?? _tables[index].status,
+      );
+      notifyListeners();
+    }
+  }
+
+  void deleteTable(int tableId) {
+    _tables.removeWhere((t) => t.id == tableId);
+    notifyListeners();
+  }
+
   void replaceAllTables(List<RestaurantTable> newTables) {
     _tables.clear();
     _tables.addAll(newTables);

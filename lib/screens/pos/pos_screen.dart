@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import '../../core/animations/bouncing_button.dart';
 import '../../core/channels/native_api_channel.dart';
@@ -106,7 +107,44 @@ class PosScreen extends StatefulWidget {
 class _PosScreenState extends State<PosScreen> {
   final TextEditingController _searchController = TextEditingController();
   DietaryType? _dietaryFilter;
-  bool _isGridView = true;
+  static bool _persistedIsGridView = false;
+  static bool _prefsLoaded = false;
+  late bool _isGridView;
+
+  @override
+  void initState() {
+    super.initState();
+    _isGridView = _persistedIsGridView;
+    if (!_prefsLoaded) {
+      _loadViewPreference();
+    }
+  }
+
+  Future<void> _loadViewPreference() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getBool('pos_is_grid_view');
+      if (saved != null) {
+        _persistedIsGridView = saved;
+        if (mounted) {
+          setState(() => _isGridView = saved);
+        }
+      }
+      _prefsLoaded = true;
+    } catch (_) {}
+  }
+
+  void _toggleGridView() {
+    NativeApiChannel.triggerNativeHaptic();
+    final newValue = !_isGridView;
+    setState(() {
+      _isGridView = newValue;
+      _persistedIsGridView = newValue;
+    });
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool('pos_is_grid_view', newValue);
+    }).catchError((_) {});
+  }
 
   @override
   void dispose() {
@@ -630,10 +668,7 @@ class _PosScreenState extends State<PosScreen> {
               _isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
               color: CulinaryColors.flameOrange,
             ),
-            onPressed: () {
-              NativeApiChannel.triggerNativeHaptic();
-              setState(() => _isGridView = !_isGridView);
-            },
+            onPressed: _toggleGridView,
           ),
           // Order Mode Switcher (Dine-In / Takeaway)
           Padding(
@@ -664,8 +699,11 @@ class _PosScreenState extends State<PosScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
+          Positioned.fill(
+            child: Column(
+              children: [
           // Merged Search Bar & Table Selector in a Single Row
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
@@ -1564,90 +1602,95 @@ class _PosScreenState extends State<PosScreen> {
           ),
         ],
       ),
-      // Floating Bottom Cart Bar (Positioned cleanly above the bottom navigation bar)
-      bottomSheet: posProvider.cart.isNotEmpty
-          ? Container(
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 92),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: theme.colorScheme.primary.withOpacity(0.35),
-                  width: 1.5,
+          ),
+          if (posProvider.cart.isNotEmpty)
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 86,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withOpacity(0.35),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.25),
+                      blurRadius: 20,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.18),
-                    blurRadius: 18,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${posProvider.totalItemCount} Items in Cart',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.outline,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 11,
-                        ),
-                      ),
-                      Text(
-                        CurrencyFormatter.formatRupees(posProvider.totalRupees),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          color: theme.colorScheme.primary,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  BouncingButton(
-                    onPressed: () => _openCartBottomSheet(context),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [CulinaryColors.flameOrange, CulinaryColors.tandoorSpice],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: CulinaryColors.flameOrange.withOpacity(0.4),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
+                child: Row(
+                  children: [
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${posProvider.totalItemCount} Items in Cart',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.outline,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11,
                           ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 18),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Review & Pay',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
+                        ),
+                        Text(
+                          CurrencyFormatter.formatRupees(posProvider.totalRupees),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: theme.colorScheme.primary,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    BouncingButton(
+                      onPressed: () => _openCartBottomSheet(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [CulinaryColors.flameOrange, CulinaryColors.tandoorSpice],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: CulinaryColors.flameOrange.withOpacity(0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Review & Pay',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            )
-          : null,
+            ),
+        ],
+      ),
     );
   }
 }

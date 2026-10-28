@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/animations/bouncing_button.dart';
 import '../../core/channels/native_api_channel.dart';
+import '../../core/utils/app_notification.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../models/table_model.dart';
 import '../../providers/pos_provider.dart';
@@ -38,6 +39,180 @@ class TablesScreen extends StatelessWidget {
     }
   }
 
+  void _showAddEditTableDialog(BuildContext context, [RestaurantTable? existingTable]) {
+    final tableProvider = context.read<TableProvider>();
+    final isEditing = existingTable != null;
+    final nameController = TextEditingController(
+      text: isEditing ? existingTable.name : 'Table ${tableProvider.tables.length + 1}',
+    );
+    int capacity = isEditing ? existingTable.seatingCapacity : 4;
+    TableStatus status = isEditing ? existingTable.status : TableStatus.available;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Icon(
+                isEditing ? Icons.edit_rounded : Icons.add_circle_rounded,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                isEditing ? 'Edit Table' : 'Add New Table',
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Table Name / Number', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: nameController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: 'e.g. Table 11, Rooftop 3, Booth A',
+                    filled: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text('Seating Capacity (Guests)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    IconButton.filledTonal(
+                      icon: const Icon(Icons.remove_rounded),
+                      onPressed: capacity > 1
+                          ? () => setDialogState(() => capacity--)
+                          : null,
+                    ),
+                    Expanded(
+                      child: Text(
+                        '$capacity Seats',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                      ),
+                    ),
+                    IconButton.filledTonal(
+                      icon: const Icon(Icons.add_rounded),
+                      onPressed: capacity < 30
+                          ? () => setDialogState(() => capacity++)
+                          : null,
+                    ),
+                  ],
+                ),
+                if (isEditing && existingTable.status != TableStatus.occupied && existingTable.status != TableStatus.billed) ...[
+                  const SizedBox(height: 18),
+                  const Text('Status', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  const SizedBox(height: 8),
+                  SegmentedButton<TableStatus>(
+                    segments: const [
+                      ButtonSegment(value: TableStatus.available, label: Text('Available')),
+                      ButtonSegment(value: TableStatus.reserved, label: Text('Reserved')),
+                    ],
+                    selected: {status},
+                    onSelectionChanged: (set) {
+                      setDialogState(() => status = set.first);
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final name = nameController.text.trim();
+                if (name.isEmpty) return;
+                Navigator.pop(ctx);
+                NativeApiChannel.triggerNativeHaptic();
+                if (isEditing) {
+                  tableProvider.updateTable(
+                    existingTable.id,
+                    name: name,
+                    seatingCapacity: capacity,
+                    status: status,
+                  );
+                  AppNotification.showSuccess(context, '$name updated successfully');
+                } else {
+                  tableProvider.addTable(
+                    name: name,
+                    seatingCapacity: capacity,
+                    status: status,
+                  );
+                  AppNotification.showSuccess(context, '$name added to Floor Plan');
+                }
+              },
+              child: Text(isEditing ? 'Save Changes' : 'Add Table'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteTable(BuildContext context, RestaurantTable table) {
+    final tableProvider = context.read<TableProvider>();
+    if (table.status == TableStatus.occupied || table.status == TableStatus.billed) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.orange),
+              SizedBox(width: 8),
+              Text('Table In Use'),
+            ],
+          ),
+          content: Text('${table.name} currently has an active order or pending bill. Please clear or settle the table before deleting it.'),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Table?'),
+        content: Text('Are you sure you want to remove ${table.name} from the floor plan?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              Navigator.pop(ctx);
+              NativeApiChannel.triggerNativeHaptic();
+              tableProvider.deleteTable(table.id);
+              AppNotification.showSuccess(context, '${table.name} deleted');
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showTableActionDialog(BuildContext context, RestaurantTable table) {
     final tableProvider = context.read<TableProvider>();
     final posProvider = context.read<PosProvider>();
@@ -57,7 +232,7 @@ class TablesScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            Text(table.name),
+            Expanded(child: Text(table.name)),
           ],
         ),
         content: Column(
@@ -79,10 +254,26 @@ class TablesScreen extends StatelessWidget {
           ],
         ),
         actions: [
+          OutlinedButton.icon(
+            icon: const Icon(Icons.edit_rounded, size: 16),
+            label: const Text('Edit'),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _showAddEditTableDialog(context, table);
+            },
+          ),
+          TextButton.icon(
+            icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 16),
+            label: const Text('Delete', style: TextStyle(color: Colors.red)),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _confirmDeleteTable(context, table);
+            },
+          ),
           if (table.status == TableStatus.available)
             FilledButton.icon(
               icon: const Icon(Icons.add_shopping_cart_rounded, size: 16),
-              label: const Text('Start Table Order'),
+              label: const Text('Start Order'),
               onPressed: () {
                 Navigator.pop(ctx);
                 posProvider.selectTable(table.id, table.name);
@@ -95,7 +286,7 @@ class TablesScreen extends StatelessWidget {
                 tableProvider.freeTable(table.id);
                 Navigator.pop(ctx);
               },
-              child: const Text('Clear & Reset Table'),
+              child: const Text('Clear & Reset'),
             ),
             FilledButton(
               onPressed: () {
@@ -127,6 +318,16 @@ class TablesScreen extends StatelessWidget {
           'Floor Plan & Tables',
           style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilledButton.tonalIcon(
+              onPressed: () => _showAddEditTableDialog(context),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Add Table', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -145,103 +346,181 @@ class TablesScreen extends StatelessWidget {
           const Divider(),
           // Tables Grid
           Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 14,
-                mainAxisSpacing: 14,
-                childAspectRatio: 1.25,
-              ),
-              itemCount: tables.length,
-              itemBuilder: (context, index) {
-                final table = tables[index];
-                final statusColor = _getStatusColor(table.status);
+            child: tables.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.table_restaurant_outlined, size: 64, color: theme.colorScheme.outline.withOpacity(0.5)),
+                        const SizedBox(height: 12),
+                        Text('No tables found', style: theme.textTheme.titleMedium),
+                        const SizedBox(height: 8),
+                        FilledButton.icon(
+                          onPressed: () => _showAddEditTableDialog(context),
+                          icon: const Icon(Icons.add_rounded),
+                          label: const Text('Add First Table'),
+                        ),
+                      ],
+                    ),
+                  )
+                : GridView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 14,
+                      mainAxisSpacing: 14,
+                      childAspectRatio: 1.25,
+                    ),
+                    itemCount: tables.length,
+                    itemBuilder: (context, index) {
+                      final table = tables[index];
+                      final statusColor = _getStatusColor(table.status);
 
-                return BouncingButton(
-                  onPressed: () {
-                    NativeApiChannel.triggerNativeHaptic();
-                    _showTableActionDialog(context, table);
-                  },
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  table.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                  ),
+                      return BouncingButton(
+                        onPressed: () {
+                          NativeApiChannel.triggerNativeHaptic();
+                          _showTableActionDialog(context, table);
+                        },
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        table.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: theme.textTheme.titleMedium?.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ),
+                                    PopupMenuButton<String>(
+                                      icon: Icon(Icons.more_vert_rounded, size: 18, color: theme.colorScheme.outline),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      itemBuilder: (ctx) => [
+                                        const PopupMenuItem(
+                                          value: 'edit',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.edit_rounded, size: 18),
+                                              SizedBox(width: 8),
+                                              Text('Edit Table'),
+                                            ],
+                                          ),
+                                        ),
+                                        if (table.status == TableStatus.occupied || table.status == TableStatus.billed)
+                                          const PopupMenuItem(
+                                            value: 'clear',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.refresh_rounded, size: 18),
+                                                SizedBox(width: 8),
+                                                Text('Clear / Reset'),
+                                              ],
+                                            ),
+                                          ),
+                                        const PopupMenuItem(
+                                          value: 'delete',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                                              SizedBox(width: 8),
+                                              Text('Delete Table', style: TextStyle(color: Colors.red)),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                      onSelected: (val) {
+                                        NativeApiChannel.triggerNativeHaptic();
+                                        if (val == 'edit') {
+                                          _showAddEditTableDialog(context, table);
+                                        } else if (val == 'clear') {
+                                          tableProvider.freeTable(table.id);
+                                          AppNotification.showSuccess(context, '${table.name} reset to Available');
+                                        } else if (val == 'delete') {
+                                          _confirmDeleteTable(context, table);
+                                        }
+                                      },
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: statusColor.withOpacity(0.14),
-                                  borderRadius: BorderRadius.circular(8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                                      decoration: BoxDecoration(
+                                        color: statusColor.withOpacity(0.14),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        _getStatusText(table.status),
+                                        style: theme.textTheme.labelSmall?.copyWith(
+                                          color: statusColor,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ),
+                                    if (table.occupiedSince != null)
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.timer_outlined, size: 13, color: statusColor),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            '${table.elapsedMinutes}m',
+                                            style: theme.textTheme.labelSmall?.copyWith(
+                                              color: statusColor,
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                  ],
                                 ),
-                                child: Text(
-                                  _getStatusText(table.status),
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: statusColor,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Icon(Icons.people_alt_rounded, size: 16, color: theme.colorScheme.outline),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${table.seatingCapacity} Seats',
-                                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
-                              ),
-                              if (table.occupiedSince != null) ...[
-                                const Spacer(),
-                                Icon(Icons.timer_outlined, size: 14, color: statusColor),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${table.elapsedMinutes}m',
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: statusColor,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(Icons.people_alt_rounded, size: 15, color: theme.colorScheme.outline),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${table.seatingCapacity} Seats',
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            color: theme.colorScheme.outline,
+                                            fontSize: 11.5,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    if (table.currentBillPaise > 0)
+                                      Text(
+                                        CurrencyFormatter.formatPaise(table.currentBillPaise),
+                                        style: theme.textTheme.titleSmall?.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ],
-                            ],
-                          ),
-                          if (table.currentBillPaise > 0)
-                            Text(
-                              CurrencyFormatter.formatPaise(table.currentBillPaise),
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: theme.colorScheme.primary,
-                              ),
-                            )
-                          else
-                            Text(
-                              'Ready for seating',
-                              style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline),
                             ),
-                        ],
-                      ),
-                    ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),

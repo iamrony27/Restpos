@@ -7,6 +7,8 @@ import 'package:flutter_restaurant_pos/models/restaurant_profile.dart';
 import 'package:flutter_restaurant_pos/providers/pos_provider.dart';
 import 'package:flutter_restaurant_pos/widgets/thermal_slip_preview_dialog.dart';
 import 'package:flutter_restaurant_pos/core/utils/app_notification.dart';
+import 'package:flutter_restaurant_pos/models/table_model.dart';
+import 'package:flutter_restaurant_pos/providers/table_provider.dart';
 import 'package:provider/provider.dart';
 
 
@@ -203,6 +205,30 @@ void main() {
     // Must show POS screen and NOT show Quick Actions modal
     expect(find.text('Quick Actions'), findsNothing);
     expect(find.text('POS Billing'), findsOneWidget);
+  });
+
+  test('TableProvider supports add, update, and delete table operations', () {
+    final tableProvider = TableProvider();
+    final initialCount = tableProvider.tables.length;
+
+    // Add table
+    tableProvider.addTable(name: 'VIP Lounge', seatingCapacity: 10);
+    expect(tableProvider.tables.length, equals(initialCount + 1));
+    final addedTable = tableProvider.tables.last;
+    expect(addedTable.name, equals('VIP Lounge'));
+    expect(addedTable.seatingCapacity, equals(10));
+    expect(addedTable.status, equals(TableStatus.available));
+
+    // Update table
+    tableProvider.updateTable(addedTable.id, name: 'VIP Rooftop Lounge', seatingCapacity: 12);
+    final updatedTable = tableProvider.getTableById(addedTable.id);
+    expect(updatedTable?.name, equals('VIP Rooftop Lounge'));
+    expect(updatedTable?.seatingCapacity, equals(12));
+
+    // Delete table
+    tableProvider.deleteTable(addedTable.id);
+    expect(tableProvider.tables.length, equals(initialCount));
+    expect(tableProvider.getTableById(addedTable.id), isNull);
   });
 }
 
