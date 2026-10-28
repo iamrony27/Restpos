@@ -238,6 +238,24 @@ class _PosScreenState extends State<PosScreen> {
                   onSelected: (_) => posProvider.selectCategory(0),
                 ),
                 const SizedBox(width: 8),
+                // Bestsellers / Top Selling Quick Filter
+                FilterChip(
+                  avatar: const Text('⭐', style: TextStyle(fontSize: 13)),
+                  label: const Text(
+                    'Bestsellers',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  selected: posProvider.selectedCategoryId == -1,
+                  selectedColor: const Color(0xFFFEF3C7),
+                  checkmarkColor: const Color(0xFFB45309),
+                  side: BorderSide(
+                    color: posProvider.selectedCategoryId == -1
+                        ? const Color(0xFFF59E0B)
+                        : Colors.amber.shade300,
+                  ),
+                  onSelected: (_) => posProvider.selectCategory(-1),
+                ),
+                const SizedBox(width: 8),
                 // Dynamic Categories
                 ...menuProvider.categories.map((cat) {
                   return Padding(
@@ -270,7 +288,7 @@ class _PosScreenState extends State<PosScreen> {
 
           const SizedBox(height: 6),
 
-          // Dishes Grid
+          // Dishes Grid with Food Photos
           Expanded(
             child: dishes.isEmpty
                 ? Center(
@@ -289,7 +307,7 @@ class _PosScreenState extends State<PosScreen> {
                       crossAxisCount: 2,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
-                      childAspectRatio: 1.25,
+                      childAspectRatio: 0.72,
                     ),
                     itemCount: dishes.length,
                     itemBuilder: (context, index) {
@@ -304,85 +322,215 @@ class _PosScreenState extends State<PosScreen> {
                               }
                             : null,
                         child: Card(
+                          clipBehavior: Clip.antiAlias,
+                          elevation: cartLine != null ? 3 : 1,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(
+                              color: cartLine != null
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.outlineVariant.withOpacity(0.5),
+                              width: cartLine != null ? 1.5 : 1,
+                            ),
+                          ),
                           color: !item.isAvailable
                               ? theme.colorScheme.surfaceContainerHigh.withOpacity(0.5)
-                              : (cartLine != null
-                                  ? theme.colorScheme.primaryContainer.withOpacity(0.2)
-                                  : theme.colorScheme.surfaceContainerLowest),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    DietaryBadge(type: item.dietaryType),
-                                    if (cartLine != null)
-                                      Container(
+                              : theme.colorScheme.surface,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Food Photo with Badges Overlay
+                              Stack(
+                                children: [
+                                  if (item.imageUri != null)
+                                    Image.asset(
+                                      item.imageUri!,
+                                      height: 102,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Container(
+                                          height: 102,
+                                          color: theme.colorScheme.surfaceContainerHighest,
+                                          child: Icon(Icons.restaurant_rounded, color: theme.colorScheme.outline),
+                                        );
+                                      },
+                                    )
+                                  else
+                                    Container(
+                                      height: 102,
+                                      color: theme.colorScheme.surfaceContainerHighest,
+                                      child: Icon(Icons.restaurant_rounded, color: theme.colorScheme.outline),
+                                    ),
+
+                                  // Subtle Gradient Scrim
+                                  Container(
+                                    height: 102,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.black.withOpacity(0.35),
+                                          Colors.transparent,
+                                          Colors.black.withOpacity(0.2),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+
+                                  // Dietary Badge (Top Left)
+                                  Positioned(
+                                    top: 8,
+                                    left: 8,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(3),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(6),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.2),
+                                            blurRadius: 4,
+                                          ),
+                                        ],
+                                      ),
+                                      child: DietaryBadge(type: item.dietaryType, size: 12),
+                                    ),
+                                  ),
+
+                                  // Top Selling Star Badge (Top Right)
+                                  if (item.isTopSelling)
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF59E0B),
+                                          borderRadius: BorderRadius.circular(10),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(0.25),
+                                              blurRadius: 4,
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.star_rounded, color: Colors.white, size: 12),
+                                            SizedBox(width: 2),
+                                            Text(
+                                              'Best',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+
+                                  // Quantity in Cart overlay (Bottom Left of photo)
+                                  if (cartLine != null)
+                                    Positioned(
+                                      bottom: 6,
+                                      left: 8,
+                                      child: Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                         decoration: BoxDecoration(
                                           color: theme.colorScheme.primary,
                                           borderRadius: BorderRadius.circular(10),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(0.3),
+                                              blurRadius: 4,
+                                            ),
+                                          ],
                                         ),
                                         child: Text(
                                           '${cartLine.quantity} in cart',
-                                          style: theme.textTheme.labelSmall?.copyWith(
+                                          style: const TextStyle(
                                             color: Colors.white,
-                                            fontWeight: FontWeight.w700,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w800,
                                           ),
                                         ),
                                       ),
-                                  ],
-                                ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.name,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: theme.textTheme.titleSmall?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                      ),
                                     ),
-                                    if (item.sku != null)
-                                      Text(
-                                        item.sku!,
-                                        style: theme.textTheme.labelSmall?.copyWith(
-                                          color: theme.colorScheme.outline,
-                                          fontSize: 10,
-                                        ),
+                                ],
+                              ),
+
+                              // Dish Content
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            item.name,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: theme.textTheme.titleSmall?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 13,
+                                              height: 1.2,
+                                            ),
+                                          ),
+                                          if (item.sku != null)
+                                            Padding(
+                                              padding: const EdgeInsets.only(top: 2),
+                                              child: Text(
+                                                item.sku!,
+                                                style: theme.textTheme.labelSmall?.copyWith(
+                                                  color: theme.colorScheme.outline,
+                                                  fontSize: 10,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
                                       ),
-                                  ],
+
+                                      // Price & Quick Add Button Row
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            item.formattedPrice,
+                                            style: theme.textTheme.titleMedium?.copyWith(
+                                              fontWeight: FontWeight.w800,
+                                              color: theme.colorScheme.primary,
+                                              fontSize: 15,
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.all(5),
+                                            decoration: BoxDecoration(
+                                              color: theme.colorScheme.primary.withOpacity(0.12),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Icon(
+                                              Icons.add_rounded,
+                                              size: 18,
+                                              color: theme.colorScheme.primary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      item.formattedPrice,
-                                      style: theme.textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.w800,
-                                        color: theme.colorScheme.primary,
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(
-                                        color: theme.colorScheme.primary.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(
-                                        Icons.add_rounded,
-                                        size: 18,
-                                        color: theme.colorScheme.primary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                       );
@@ -589,10 +737,40 @@ class _CartBottomSheet extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('GST (5%) [CGST 2.5% + SGST 2.5%]', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline)),
-                    Text(CurrencyFormatter.formatRupees(posProvider.taxRupees), style: theme.textTheme.bodySmall),
+                    Text(
+                      posProvider.isGstEnabled
+                          ? 'GST (${posProvider.gstRatePercent.toStringAsFixed(1)}%) [CGST ${(posProvider.gstRatePercent / 2).toStringAsFixed(1)}% + SGST ${(posProvider.gstRatePercent / 2).toStringAsFixed(1)}%]'
+                          : 'Tax Exempt / Non-GST',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: posProvider.isGstEnabled ? theme.colorScheme.outline : Colors.green.shade700,
+                        fontWeight: posProvider.isGstEnabled ? FontWeight.normal : FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      posProvider.isGstEnabled ? CurrencyFormatter.formatRupees(posProvider.taxRupees) : '₹0.00',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: posProvider.isGstEnabled ? null : Colors.green.shade700,
+                        fontWeight: posProvider.isGstEnabled ? null : FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
+                if (posProvider.isRoundOffEnabled && posProvider.roundOffAdjustmentPaise != 0) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Round-Off Adjustment',
+                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
+                      ),
+                      Text(
+                        '${posProvider.roundOffAdjustmentPaise > 0 ? "+" : ""}${CurrencyFormatter.formatRupees(posProvider.roundOffAdjustmentRupees)}',
+                        style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ],
                 const Divider(height: 18),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

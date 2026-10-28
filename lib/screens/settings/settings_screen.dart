@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/animations/bouncing_button.dart';
 import '../../core/animations/smooth_page_route.dart';
 import '../../core/channels/native_api_channel.dart';
-import '../../models/restaurant_profile.dart';
+import '../../core/theme/color_schemes.dart';
+import '../../providers/pos_provider.dart';
+import '../setup/setup_wizard_screen.dart';
 import 'wifi_debugging_guide_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -20,7 +23,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final RestaurantProfile _profile = const RestaurantProfile();
   NativeDeviceInfo? _deviceInfo;
   NativeBatteryInfo? _batteryInfo;
   bool _printerConnected = true;
@@ -43,12 +45,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _testPrint() async {
+    final pos = Provider.of<PosProvider>(context, listen: false);
+    final profile = pos.profile;
     await NativeApiChannel.triggerNativeHaptic();
+
     final sample = '''
     ================================
          TEST RECEIPT - ESC/POS
-         SPICE GARDEN RESTAURANT
-    ================================
+         ${profile.name.toUpperCase()}
+       ${profile.tagline}
+    --------------------------------
+    FSSAI Lic: ${profile.fssai}
+    GSTIN: ${profile.isGstEnabled ? profile.gstin : "Non-GST / Exempt"}
+    Round-Off: ${profile.isRoundOffEnabled ? "ENABLED" : "DISABLED"}
     Date: ${DateTime.now().toString().split('.')[0]}
     Printer: Thermal 58mm / 80mm
     Status: CONNECTED & READY
@@ -59,27 +68,118 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Test print dispatched to native Android printer service!'),
+          backgroundColor: CulinaryColors.emeraldGreen,
           behavior: SnackBarBehavior.floating,
         ),
       );
     }
   }
 
+  void _editFssaiDialog(BuildContext context, PosProvider pos) {
+    final controller = TextEditingController(text: pos.fssaiNumber);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit FSSAI License Number'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          maxLength: 14,
+          decoration: const InputDecoration(
+            labelText: '14-digit FSSAI number',
+            prefixIcon: Icon(Icons.verified_user_rounded),
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              pos.setFssaiNumber(controller.text.trim());
+              Navigator.pop(ctx);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final pos = context.watch<PosProvider>();
+    final profile = pos.profile;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Settings & Hardware',
+          'Settings & Configuration',
           style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
         ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Wi-Fi Debugging Banner
+          // Setup Wizard Card (Prominent CTA)
+          BouncingButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                SmoothPageRoute(page: const SetupWizardScreen()),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [CulinaryColors.tandoorOrange, CulinaryColors.flameOrange],
+                ),
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: CulinaryColors.tandoorOrange.withOpacity(0.35),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Colors.white,
+                    radius: 22,
+                    child: Icon(Icons.auto_fix_high_rounded, color: CulinaryColors.tandoorOrange, size: 24),
+                  ),
+                  SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Restaurant Setup Wizard',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Configure name, GST, FSSAI, round-off, and UPI payments',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Wi-Fi Debugging Guide Banner
           BouncingButton(
             onPressed: () {
               Navigator.push(
@@ -92,15 +192,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    theme.colorScheme.primary.withOpacity(0.9),
-                    theme.colorScheme.secondary.withOpacity(0.8),
+                    CulinaryColors.royalBlue,
+                    CulinaryColors.royalBlue.withOpacity(0.8),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.wifi_rounded, color: Colors.white, size: 28),
+                  Icon(Icons.wifi_rounded, color: Colors.white, size: 26),
                   SizedBox(width: 14),
                   Expanded(
                     child: Column(
@@ -108,11 +208,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         Text(
                           'Wi-Fi Debugging & Live UI Preview',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16),
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15),
                         ),
                         SizedBox(height: 2),
                         Text(
-                          'Connect your phone over Wi-Fi to see UI live as you build!',
+                          'Connected to phone over wireless adb',
                           style: TextStyle(color: Colors.white70, fontSize: 12),
                         ),
                       ],
@@ -126,8 +226,203 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 20),
 
-          // Restaurant Info
+          // GST & Tax Compliance Section
           Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: CulinaryColors.emeraldGreen.withOpacity(0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.percent_rounded, color: CulinaryColors.emeraldGreen, size: 20),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'GST Tax Invoicing',
+                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      ),
+                      Switch.adaptive(
+                        value: pos.isGstEnabled,
+                        activeColor: CulinaryColors.emeraldGreen,
+                        onChanged: (val) {
+                          NativeApiChannel.triggerNativeHaptic();
+                          pos.setGstEnabled(val);
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    pos.isGstEnabled
+                        ? 'GST is ENABLED: Calculating CGST + SGST (${pos.gstRatePercent.toStringAsFixed(1)}%) on invoices.'
+                        : 'GST is DISABLED: Non-GST / Tax-exempt mode (0% tax applied).',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: pos.isGstEnabled ? Colors.grey.shade700 : Colors.orange.shade800,
+                      fontWeight: pos.isGstEnabled ? FontWeight.normal : FontWeight.w600,
+                    ),
+                  ),
+
+                  if (pos.isGstEnabled) ...[
+                    const Divider(height: 24),
+                    const Text('Standard GST Slabs:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      children: [5.0, 12.0, 18.0].map((rate) {
+                        final selected = pos.gstRatePercent == rate;
+                        return ChoiceChip(
+                          label: Text('$rate% ${rate == 5.0 ? "(Restaurant)" : ""}'),
+                          selected: selected,
+                          selectedColor: CulinaryColors.emeraldGreen.withOpacity(0.2),
+                          onSelected: (val) {
+                            if (val) pos.setGstRatePercent(rate);
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildProfileRow('GSTIN Number', profile.gstin),
+                  ],
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Round Off & Billing Section
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: CulinaryColors.amethystViolet.withOpacity(0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.currency_rupee_rounded, color: CulinaryColors.amethystViolet, size: 20),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Invoice Round-Off',
+                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      ),
+                      Switch.adaptive(
+                        value: pos.isRoundOffEnabled,
+                        activeColor: CulinaryColors.amethystViolet,
+                        onChanged: (val) {
+                          NativeApiChannel.triggerNativeHaptic();
+                          pos.setRoundOffEnabled(val);
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    pos.isRoundOffEnabled
+                        ? 'Round-Off is ENABLED: Final payable bill rounds to nearest integer Rupee (± paise).'
+                        : 'Round-Off is DISABLED: Exact paise billed to customer.',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // FSSAI Food Safety License Section
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: CulinaryColors.turmericGold.withOpacity(0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.verified_user_rounded, color: CulinaryColors.turmericGold, size: 20),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'FSSAI Food Safety License',
+                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.edit_rounded, size: 20),
+                        onPressed: () => _editFssaiDialog(context, pos),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('License No:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                        Text(
+                          profile.fssai.isNotEmpty ? profile.fssai : '11223344556677',
+                          style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1.2, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Mandatory for all food business operators. Displayed on billing receipts and KOTs.',
+                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Restaurant Info Summary
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -135,11 +430,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Text('Restaurant Profile', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 12),
-                  _buildProfileRow('Name', _profile.name),
-                  _buildProfileRow('GSTIN', _profile.gstin),
-                  _buildProfileRow('FSSAI License', _profile.fssai),
-                  _buildProfileRow('UPI VPA', _profile.upiId),
-                  _buildProfileRow('Phone', _profile.phone),
+                  _buildProfileRow('Name', profile.name),
+                  _buildProfileRow('Tagline', profile.tagline),
+                  _buildProfileRow('UPI VPA', profile.upiId),
+                  _buildProfileRow('Phone', profile.phone),
+                  _buildProfileRow('Address', profile.address),
                 ],
               ),
             ),
@@ -149,6 +444,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Hardware & Printing
           Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -189,7 +485,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Icon(Icons.receipt_rounded, size: 18, color: theme.colorScheme.primary),
                           const SizedBox(width: 8),
                           Text(
-                            'Dispatch Test Print',
+                            'Dispatch Test Print with FSSAI & GST',
                             style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w700),
                           ),
                         ],
@@ -205,6 +501,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Native Android Platform Inspection
           Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -244,6 +541,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Theme Settings
           Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: ListTile(
               title: const Text('Material 3 Dark Theme', style: TextStyle(fontWeight: FontWeight.w600)),
               subtitle: const Text('Switch between light and dark Material 3 palette'),
@@ -267,7 +565,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
         ],
       ),
     );

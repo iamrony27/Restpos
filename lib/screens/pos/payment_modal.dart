@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/animations/bouncing_button.dart';
 import '../../core/channels/native_api_channel.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../models/order_model.dart';
+import '../../providers/pos_provider.dart';
 import '../../widgets/upi_qr_widget.dart';
 
 class PaymentModal extends StatefulWidget {
@@ -39,21 +41,37 @@ class _PaymentModalState extends State<PaymentModal> {
 
   Future<void> _completePayment() async {
     setState(() => _isProcessing = true);
+    final posProvider = Provider.of<PosProvider>(context, listen: false);
+    final profile = posProvider.profile;
+
+    final gstLine = widget.order.taxBps > 0
+        ? 'GST (${(widget.order.taxBps / 100).toStringAsFixed(1)}%): ₹${widget.order.taxRupees.toStringAsFixed(2)}'
+        : 'Tax: ₹0.00 (Non-GST / Exempt)';
+
+    final roundOffLine = widget.order.roundOffPaise != 0
+        ? 'Round Off: ${widget.order.roundOffPaise > 0 ? "+" : ""}₹${widget.order.roundOffRupees.toStringAsFixed(2)}\n'
+        : '';
 
     // Call native Android thermal print hook
     final receiptPayload = '''
-    SPICE GARDEN RESTAURANT
+    ================================
+         ${profile.name.toUpperCase()}
+       ${profile.tagline}
+       Ph: ${profile.phone}
+    --------------------------------
+    FSSAI Lic: ${profile.fssai.isNotEmpty ? profile.fssai : "11223344556677"}
+    GSTIN: ${profile.isGstEnabled ? profile.gstin : "Exempt / Non-GST"}
     Order #${widget.order.orderNumber}
     ${widget.order.type == OrderType.dineIn ? widget.order.tableName ?? 'Dine-In' : 'Takeaway'}
     --------------------------------
     ${widget.order.items.map((i) => '${i.quantity}x ${i.menuItem.name} - ₹${i.lineTotalRupees.toStringAsFixed(0)}').join('\n')}
     --------------------------------
-    Subtotal: ₹${widget.order.subtotalRupees.toStringAsFixed(0)}
-    GST (5%): ₹${widget.order.taxRupees.toStringAsFixed(0)}
-    TOTAL: ₹${widget.order.totalRupees.toStringAsFixed(0)}
-    Payment: ${_selectedMethod.name.toUpperCase()}
-    --------------------------------
-    Thank You! Visit Again.
+    Subtotal: ₹${widget.order.subtotalRupees.toStringAsFixed(2)}
+    $gstLine
+    ${roundOffLine}GRAND TOTAL: ₹${widget.order.totalRupees.toStringAsFixed(0)}
+    Payment Mode: ${_selectedMethod.name.toUpperCase()}
+    ================================
+         Thank You! Visit Again.
     ''';
 
     await NativeApiChannel.printReceiptNative(receiptText: receiptPayload);
@@ -64,7 +82,7 @@ class _PaymentModalState extends State<PaymentModal> {
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Payment confirmed! Receipt printed for ${widget.order.orderNumber}'),
+          content: Text('Payment confirmed! Thermal receipt printed for ${widget.order.orderNumber}'),
           backgroundColor: const Color(0xFF16A34A),
           behavior: SnackBarBehavior.floating,
         ),
@@ -166,8 +184,8 @@ class _PaymentModalState extends State<PaymentModal> {
             // Dynamic Payment View
             if (_selectedMethod == PaymentMethod.upi) ...[
               UpiQrWidget(
-                upiId: 'spicegarden@icici',
-                payeeName: 'Spice Garden Restaurant',
+                upiId: context.watch<PosProvider>().profile.upiId,
+                payeeName: context.watch<PosProvider>().profile.name,
                 amountRupees: totalRupees,
                 orderNumber: widget.order.orderNumber,
               ),

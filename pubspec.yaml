@@ -25,3 +25,25 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/
+    - assets/menu/beverages/
+    - assets/menu/biryani/
+    - assets/menu/burger/
+    - assets/menu/chicken/
+    - assets/menu/chinese/
+    - assets/menu/desserts/
+    - assets/menu/egg/
+    - assets/menu/fish-seafood/
+    - assets/menu/indian-bread/
+    - assets/menu/mutton/
+    - assets/menu/noodles/
+    - assets/menu/pizza/
+    - assets/menu/rice/
+    - assets/menu/salad/
+    - assets/menu/sandwich/
+    - assets/menu/snacks/
+    - assets/menu/soup/
+    - assets/menu/starters/
+    - assets/menu/vegetarian/
+

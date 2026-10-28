@@ -25,8 +25,9 @@ class PosProvider extends ChangeNotifier {
   String? _selectedTableName;
   int _discountPaise = 0;
   final List<CartLine> _cart = [];
-  final RestaurantProfile profile = const RestaurantProfile();
+  RestaurantProfile _profile = const RestaurantProfile();
 
+  RestaurantProfile get profile => _profile;
   int get selectedCategoryId => _selectedCategoryId;
   String get searchQuery => _searchQuery;
   OrderType get orderType => _orderType;
@@ -35,26 +36,67 @@ class PosProvider extends ChangeNotifier {
   int get discountPaise => _discountPaise;
   List<CartLine> get cart => List.unmodifiable(_cart);
 
+  bool get isGstEnabled => _profile.isGstEnabled;
+  double get gstRatePercent => _profile.gstRatePercent;
+  bool get isRoundOffEnabled => _profile.isRoundOffEnabled;
+  String get fssaiNumber => _profile.fssai;
+  String get gstin => _profile.gstin;
+
   int get totalItemCount => _cart.fold(0, (sum, line) => sum + line.quantity);
 
   int get subtotalPaise => _cart.fold(0, (sum, line) => sum + line.lineTotalPaise);
 
-  int get taxBps => profile.defaultTaxBps; // 500 = 5%
+  int get taxBps => _profile.isGstEnabled ? (_profile.gstRatePercent * 100).round() : 0;
 
   int get taxPaise {
+    if (!_profile.isGstEnabled) return 0;
     final taxable = (subtotalPaise - _discountPaise).clamp(0, double.infinity).toInt();
     return (taxable * taxBps) ~/ 10000;
   }
 
-  int get totalPaise {
-    final sub = subtotalPaise - _discountPaise;
-    return (sub.clamp(0, double.infinity).toInt() + taxPaise);
+  int get exactTotalPaise {
+    final sub = (subtotalPaise - _discountPaise).clamp(0, double.infinity).toInt();
+    return sub + taxPaise;
   }
+
+  int get roundOffAdjustmentPaise {
+    if (!_profile.isRoundOffEnabled) return 0;
+    final rounded = ((exactTotalPaise / 100.0).round()) * 100;
+    return rounded - exactTotalPaise;
+  }
+
+  int get totalPaise => exactTotalPaise + roundOffAdjustmentPaise;
 
   double get subtotalRupees => subtotalPaise / 100.0;
   double get taxRupees => taxPaise / 100.0;
   double get discountRupees => _discountPaise / 100.0;
+  double get roundOffAdjustmentRupees => roundOffAdjustmentPaise / 100.0;
   double get totalRupees => totalPaise / 100.0;
+
+  void updateProfile(RestaurantProfile newProfile) {
+    _profile = newProfile;
+    notifyListeners();
+  }
+
+  void setGstEnabled(bool enabled) {
+    _profile = _profile.copyWith(isGstEnabled: enabled);
+    notifyListeners();
+  }
+
+  void setGstRatePercent(double rate) {
+    _profile = _profile.copyWith(gstRatePercent: rate, defaultTaxBps: (rate * 100).round());
+    notifyListeners();
+  }
+
+  void setRoundOffEnabled(bool enabled) {
+    _profile = _profile.copyWith(isRoundOffEnabled: enabled);
+    notifyListeners();
+  }
+
+  void setFssaiNumber(String number) {
+    _profile = _profile.copyWith(fssai: number);
+    notifyListeners();
+  }
 
   void selectCategory(int categoryId) {
     _selectedCategoryId = categoryId;
@@ -156,6 +198,7 @@ class PosProvider extends ChangeNotifier {
       subtotalPaise: subtotalPaise,
       taxBps: taxBps,
       discountPaise: _discountPaise,
+      roundOffPaise: roundOffAdjustmentPaise,
       createdAt: DateTime.now(),
       completedAt: DateTime.now(),
       paymentMethod: paymentMethod,

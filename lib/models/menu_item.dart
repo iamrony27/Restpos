@@ -10,6 +10,8 @@ class MenuItem {
   final String? description;
   final String? sku;
   final String? imageUri;
+  final bool isTopSelling;
+  final int salesCount;
 
   const MenuItem({
     required this.id,
@@ -21,6 +23,8 @@ class MenuItem {
     this.description,
     this.sku,
     this.imageUri,
+    this.isTopSelling = false,
+    this.salesCount = 0,
   });
 
   double get priceRupees => pricePaise / 100.0;
@@ -37,6 +41,8 @@ class MenuItem {
     String? description,
     String? sku,
     String? imageUri,
+    bool? isTopSelling,
+    int? salesCount,
   }) {
     return MenuItem(
       id: id ?? this.id,
@@ -48,6 +54,8 @@ class MenuItem {
       description: description ?? this.description,
       sku: sku ?? this.sku,
       imageUri: imageUri ?? this.imageUri,
+      isTopSelling: isTopSelling ?? this.isTopSelling,
+      salesCount: salesCount ?? this.salesCount,
     );
   }
 
@@ -62,6 +70,8 @@ class MenuItem {
       'description': description,
       'sku': sku,
       'image_uri': imageUri,
+      'is_top_selling': isTopSelling ? 1 : 0,
+      'sales_count': salesCount,
     };
   }
 
@@ -86,6 +96,8 @@ class MenuItem {
       description: map['description'] as String?,
       sku: map['sku'] as String?,
       imageUri: map['image_uri'] as String?,
+      isTopSelling: (map['is_top_selling'] as int? ?? 0) == 1,
+      salesCount: (map['sales_count'] as int?) ?? 0,
     );
   }
 }

@@ -30,8 +30,9 @@ class Order {
   final OrderStatus status;
   final List<OrderItem> items;
   final int subtotalPaise;
-  final int taxBps; // e.g. 500 = 5.0% GST
+  final int taxBps; // e.g. 500 = 5.0% GST, 0 = Non-GST
   final int discountPaise;
+  final int roundOffPaise; // Can be positive or negative paise adjustment
   final DateTime createdAt;
   final DateTime? completedAt;
   final PaymentMethod? paymentMethod;
@@ -48,6 +49,7 @@ class Order {
     required this.subtotalPaise,
     this.taxBps = 500, // 5% default GST
     this.discountPaise = 0,
+    this.roundOffPaise = 0,
     required this.createdAt,
     this.completedAt,
     this.paymentMethod,
@@ -55,11 +57,13 @@ class Order {
   });
 
   int get taxPaise => ((subtotalPaise - discountPaise).clamp(0, double.infinity).toInt() * taxBps) ~/ 10000;
-  int get totalPaise => (subtotalPaise - discountPaise + taxPaise).clamp(0, double.infinity).toInt();
+  int get exactTotalPaise => (subtotalPaise - discountPaise + taxPaise).clamp(0, double.infinity).toInt();
+  int get totalPaise => exactTotalPaise + roundOffPaise;
 
   double get subtotalRupees => subtotalPaise / 100.0;
   double get taxRupees => taxPaise / 100.0;
   double get discountRupees => discountPaise / 100.0;
+  double get roundOffRupees => roundOffPaise / 100.0;
   double get totalRupees => totalPaise / 100.0;
 
   Order copyWith({
@@ -73,6 +77,7 @@ class Order {
     int? subtotalPaise,
     int? taxBps,
     int? discountPaise,
+    int? roundOffPaise,
     DateTime? createdAt,
     DateTime? completedAt,
     PaymentMethod? paymentMethod,
@@ -89,6 +94,7 @@ class Order {
       subtotalPaise: subtotalPaise ?? this.subtotalPaise,
       taxBps: taxBps ?? this.taxBps,
       discountPaise: discountPaise ?? this.discountPaise,
+      roundOffPaise: roundOffPaise ?? this.roundOffPaise,
       createdAt: createdAt ?? this.createdAt,
       completedAt: completedAt ?? this.completedAt,
       paymentMethod: paymentMethod ?? this.paymentMethod,
