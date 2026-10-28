@@ -561,7 +561,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 16),
             if (isHistory) ...[
-              _buildHistoryBarChart(theme, dailyHistory, maxDailyRevenue, sevenDayRevenue, sevenDayBills),
+              _buildHistoryLineChart(theme, dailyHistory, maxDailyRevenue, sevenDayRevenue, sevenDayBills),
             ] else ...[
               Row(
               children: [
@@ -712,62 +712,93 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildHistoryBarChart(
+  Widget _buildHistoryLineChart(
     ThemeData theme,
     List<Map<String, dynamic>> dailyHistory,
     double maxDailyRevenue,
     double sevenDayRevenue,
     int sevenDayBills,
   ) {
+    final effectiveMax = maxDailyRevenue > 0 ? maxDailyRevenue : 500.0;
+    final double step;
+    if (effectiveMax <= 1000) {
+      step = 500;
+    } else if (effectiveMax <= 3000) {
+      step = 1000;
+    } else if (effectiveMax <= 10000) {
+      step = 2500;
+    } else {
+      step = 5000;
+    }
+    final maxY = ((effectiveMax / step).ceil() + 0.3) * step;
+
+    final spots = dailyHistory.asMap().entries.map((entry) {
+      final idx = entry.key.toDouble();
+      final rev = entry.value['revenue'] as double;
+      return FlSpot(idx, rev);
+    }).toList();
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
-          height: 170,
-          child: BarChart(
-            BarChartData(
-              alignment: BarChartAlignment.spaceAround,
-              maxY: maxDailyRevenue > 0 ? (maxDailyRevenue * 1.3) : 1000,
-              barTouchData: BarTouchData(
+          height: 180,
+          child: LineChart(
+            LineChartData(
+              minX: 0,
+              maxX: (dailyHistory.length - 1).toDouble(),
+              minY: 0,
+              maxY: maxY,
+              lineTouchData: LineTouchData(
                 enabled: true,
-                touchTooltipData: BarTouchTooltipData(
+                touchTooltipData: LineTouchTooltipData(
                   getTooltipColor: (_) => const Color(0xFF261D19),
                   tooltipRoundedRadius: 8,
-                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                    final item = dailyHistory[group.x.toInt()];
-                    return BarTooltipItem(
-                      '${item['label']} (${item['dateStr']})\n',
-                      const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
-                      children: [
-                        TextSpan(
-                          text: '₹${(item['revenue'] as double).toStringAsFixed(0)}',
-                          style: const TextStyle(
-                            color: CulinaryColors.flameOrange,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
+                  getTooltipItems: (touchedSpots) {
+                    return touchedSpots.map((spot) {
+                      final idx = spot.x.toInt();
+                      final item = dailyHistory[idx];
+                      return LineTooltipItem(
+                        '${item['label']} (${item['dateStr']})\n',
+                        const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: '₹${(item['revenue'] as double).toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              color: CulinaryColors.flameOrange,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
-                        ),
-                        TextSpan(
-                          text: ' • ${item['orders']} bills',
-                          style: const TextStyle(color: Colors.white60, fontSize: 10),
-                        ),
-                      ],
-                    );
+                          TextSpan(
+                            text: ' • ${item['orders']} bills',
+                            style: const TextStyle(color: Colors.white60, fontSize: 10),
+                          ),
+                        ],
+                      );
+                    }).toList();
                   },
                 ),
+                handleBuiltInTouches: true,
               ),
               titlesData: FlTitlesData(
                 show: true,
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
+                    reservedSize: 24,
+                    interval: 1,
                     getTitlesWidget: (val, meta) {
                       final idx = val.toInt();
                       if (idx < 0 || idx >= dailyHistory.length) return const SizedBox.shrink();
                       final item = dailyHistory[idx];
                       final isToday = idx == dailyHistory.length - 1;
                       return Padding(
-                        padding: const EdgeInsets.only(top: 5),
+                        padding: const EdgeInsets.only(top: 6),
                         child: Text(
                           item['label'] as String,
                           style: TextStyle(
@@ -778,23 +809,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       );
                     },
-                    reservedSize: 22,
                   ),
                 ),
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
-                    reservedSize: 38,
+                    reservedSize: 42,
+                    interval: step,
                     getTitlesWidget: (val, meta) {
                       if (val == 0) return const SizedBox.shrink();
-                      if (val >= 1000) {
-                        return Text(
-                          '₹${(val / 1000).toStringAsFixed(0)}k',
-                          style: TextStyle(fontSize: 9, color: theme.colorScheme.outline),
-                        );
+                      // Only show exact step intervals, avoiding repeated numbers
+                      if ((val % step).abs() > 0.01 && (step - (val % step)).abs() > 0.01) {
+                        return const SizedBox.shrink();
                       }
+                      final formatted = val >= 1000
+                          ? (val % 1000 == 0 ? '₹${(val / 1000).toInt()}k' : '₹${(val / 1000).toStringAsFixed(1)}k')
+                          : '₹${val.toInt()}';
                       return Text(
-                        '₹${val.toInt()}',
+                        formatted,
                         style: TextStyle(fontSize: 9, color: theme.colorScheme.outline),
                       );
                     },
@@ -806,41 +838,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
               gridData: FlGridData(
                 show: true,
                 drawVerticalLine: false,
+                horizontalInterval: step,
                 getDrawingHorizontalLine: (val) => FlLine(
                   color: theme.colorScheme.outlineVariant.withOpacity(0.25),
                   strokeWidth: 0.8,
+                  dashArray: [4, 4],
                 ),
               ),
               borderData: FlBorderData(show: false),
-              barGroups: dailyHistory.asMap().entries.map((entry) {
-                final idx = entry.key;
-                final item = entry.value;
-                final revenue = item['revenue'] as double;
-                final isToday = idx == dailyHistory.length - 1;
-
-                return BarChartGroupData(
-                  x: idx,
-                  barRods: [
-                    BarChartRodData(
-                      toY: revenue,
-                      gradient: LinearGradient(
-                        colors: isToday
-                            ? [CulinaryColors.flameOrange, CulinaryColors.tandoorSpice]
-                            : [CulinaryColors.royalBlue, const Color(0xFF38BDF8)],
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                      ),
-                      width: 16,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
-                      backDrawRodData: BackgroundBarChartRodData(
-                        show: true,
-                        toY: maxDailyRevenue > 0 ? (maxDailyRevenue * 1.15) : 1000,
-                        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
-                      ),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: spots,
+                  isCurved: true,
+                  curveSmoothness: 0.35,
+                  color: CulinaryColors.flameOrange,
+                  barWidth: 3.2,
+                  isStrokeCapRound: true,
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) {
+                      final isToday = index == dailyHistory.length - 1;
+                      return FlDotCirclePainter(
+                        radius: isToday ? 5.5 : 4.0,
+                        color: isToday ? CulinaryColors.flameOrange : Colors.white,
+                        strokeWidth: 2.2,
+                        strokeColor: CulinaryColors.flameOrange,
+                      );
+                    },
+                  ),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    gradient: LinearGradient(
+                      colors: [
+                        CulinaryColors.flameOrange.withOpacity(0.28),
+                        CulinaryColors.flameOrange.withOpacity(0.01),
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
                     ),
-                  ],
-                );
-              }).toList(),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
