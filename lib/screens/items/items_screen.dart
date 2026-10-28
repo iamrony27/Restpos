@@ -705,12 +705,12 @@ class _ItemsScreenState extends State<ItemsScreen> {
                           return RepaintBoundary(
                             child: Card(
                               clipBehavior: Clip.antiAlias,
-                              elevation: 1,
+                              elevation: 0.8,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(18),
                                 side: BorderSide(
                                   color: item.isAvailable
-                                      ? theme.colorScheme.outlineVariant.withOpacity(0.5)
+                                      ? theme.colorScheme.outlineVariant.withOpacity(0.4)
                                       : Colors.red.withOpacity(0.3),
                                   width: 1,
                                 ),
@@ -850,7 +850,7 @@ class _ItemsScreenState extends State<ItemsScreen> {
                                 color: item.isAvailable
                                     ? theme.colorScheme.surface
                                     : theme.colorScheme.surfaceContainerHigh.withOpacity(0.4),
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(18),
                                 border: Border.all(
                                   color: item.isAvailable
                                       ? theme.colorScheme.outlineVariant.withOpacity(0.4)
@@ -859,7 +859,7 @@ class _ItemsScreenState extends State<ItemsScreen> {
                                 ),
                               ),
                               child: InkWell(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(18),
                                 onTap: () => _showAddEditDishDialog(context, item),
                                 child: SizedBox(
                                   height: 106,
@@ -870,7 +870,7 @@ class _ItemsScreenState extends State<ItemsScreen> {
                                       SizedBox(
                                         width: 106,
                                         child: ClipRRect(
-                                          borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+                                          borderRadius: const BorderRadius.horizontal(left: Radius.circular(18)),
                                           child: Stack(
                                             fit: StackFit.expand,
                                             children: [

@@ -226,33 +226,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(height: 16),
 
           // Quick Action Banner: Sales & GST Tax Report
-          GestureDetector(
-            onTap: () {
-              NativeApiChannel.triggerNativeHaptic();
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SalesReportScreen()),
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [
-                    CulinaryColors.flameOrange,
-                    CulinaryColors.tandoorSpice,
+          Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(18),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () {
+                NativeApiChannel.triggerNativeHaptic();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SalesReportScreen()),
+                );
+              },
+              child: Ink(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [
+                      CulinaryColors.flameOrange,
+                      CulinaryColors.tandoorSpice,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: CulinaryColors.flameOrange.withOpacity(0.25),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: CulinaryColors.flameOrange.withOpacity(0.25),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Row(
+                child: Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
@@ -290,6 +294,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
+        ),
 
           const SizedBox(height: 18),
 
@@ -356,7 +361,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           // Payment Channel Breakdown Card
           Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0.8,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: BorderSide(
+                color: theme.colorScheme.outlineVariant.withOpacity(0.35),
+                width: 1,
+              ),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -578,8 +590,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(
+          color: theme.colorScheme.outlineVariant.withOpacity(0.35),
+          width: 1,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

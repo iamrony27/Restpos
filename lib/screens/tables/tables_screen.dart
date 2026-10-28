@@ -386,6 +386,21 @@ class TablesScreen extends StatelessWidget {
                           _showTableActionDialog(context, table);
                         },
                         child: Card(
+                          elevation: table.status != TableStatus.available ? 1.5 : 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                            side: BorderSide(
+                              color: statusColor.withOpacity(table.status != TableStatus.available ? 0.45 : 0.25),
+                              width: table.status != TableStatus.available ? 1.5 : 1,
+                            ),
+                          ),
+                          color: table.status == TableStatus.occupied
+                              ? const Color(0xFF0284C7).withOpacity(0.05)
+                              : table.status == TableStatus.billed
+                                  ? const Color(0xFFD97706).withOpacity(0.05)
+                                  : table.status == TableStatus.available
+                                      ? const Color(0xFF16A34A).withOpacity(0.03)
+                                      : null,
                           child: Padding(
                             padding: const EdgeInsets.all(12),
                             child: Column(
@@ -533,16 +548,32 @@ class TablesScreen extends StatelessWidget {
   }
 
   Widget _buildLegendItem(String label, Color color) {
-    return Row(
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 6),
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1055,7 +1055,7 @@ class _PosScreenState extends State<PosScreen> {
                           crossAxisCount: 2,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
-                          childAspectRatio: 0.88,
+                          childAspectRatio: 0.84,
                         ),
                         itemCount: dishes.length,
                         itemBuilder: (context, index) {
@@ -1065,14 +1065,14 @@ class _PosScreenState extends State<PosScreen> {
                           return RepaintBoundary(
                             child: Card(
                               clipBehavior: Clip.antiAlias,
-                              elevation: cartLine != null ? 3 : 1,
+                              elevation: cartLine != null ? 3.5 : 0.8,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(18),
                                 side: BorderSide(
                                   color: cartLine != null
-                                      ? theme.colorScheme.primary
-                                      : theme.colorScheme.outlineVariant.withOpacity(0.5),
-                                  width: cartLine != null ? 1.5 : 1,
+                                      ? CulinaryColors.flameOrange
+                                      : theme.colorScheme.outlineVariant.withOpacity(0.4),
+                                  width: cartLine != null ? 1.8 : 1,
                                 ),
                               ),
                               color: !item.isAvailable
@@ -1545,18 +1545,18 @@ class _PosScreenState extends State<PosScreen> {
                                 color: item.isAvailable
                                     ? theme.colorScheme.surface
                                     : theme.colorScheme.surfaceContainerHigh.withOpacity(0.4),
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(18),
                                 border: Border.all(
                                   color: cartLine != null
-                                      ? theme.colorScheme.primary
+                                      ? CulinaryColors.flameOrange
                                       : (item.isAvailable
                                           ? theme.colorScheme.outlineVariant.withOpacity(0.4)
                                           : Colors.red.withOpacity(0.3)),
-                                  width: cartLine != null ? 1.5 : 1,
+                                  width: cartLine != null ? 1.8 : 1,
                                 ),
                               ),
                               child: InkWell(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(18),
                                 onTap: () {
                                   if (item.isAvailable) {
                                     posProvider.addToCart(item);

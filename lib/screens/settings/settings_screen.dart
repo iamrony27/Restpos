@@ -526,7 +526,14 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
 
           // GST & Tax Compliance Section
           Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0.8,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: BorderSide(
+                color: theme.colorScheme.outlineVariant.withOpacity(0.35),
+                width: 1,
+              ),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -646,7 +653,14 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
 
           // Round Off & Billing Section
           Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0.8,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: BorderSide(
+                color: theme.colorScheme.outlineVariant.withOpacity(0.35),
+                width: 1,
+              ),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -698,7 +712,14 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
 
           // FSSAI Food Safety License Section
           Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0.8,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: BorderSide(
+                color: theme.colorScheme.outlineVariant.withOpacity(0.35),
+                width: 1,
+              ),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -762,7 +783,14 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
 
           // Restaurant Info Summary
           Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0.8,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: BorderSide(
+                color: theme.colorScheme.outlineVariant.withOpacity(0.35),
+                width: 1,
+              ),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -784,7 +812,14 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
 
           // Hardware & Printing
           Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0.8,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: BorderSide(
+                color: theme.colorScheme.outlineVariant.withOpacity(0.35),
+                width: 1,
+              ),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -996,7 +1031,14 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
 
           // Native Android Platform Inspection
           Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0.8,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: BorderSide(
+                color: theme.colorScheme.outlineVariant.withOpacity(0.35),
+                width: 1,
+              ),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -1036,7 +1078,14 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
 
           // Backup & Restore Database Card
           Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0.8,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: BorderSide(
+                color: theme.colorScheme.outlineVariant.withOpacity(0.35),
+                width: 1,
+              ),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -1124,7 +1173,14 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
 
           // Theme Settings
           Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0.8,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: BorderSide(
+                color: theme.colorScheme.outlineVariant.withOpacity(0.35),
+                width: 1,
+              ),
+            ),
             child: ListTile(
               title: const Text('Material 3 Dark Theme', style: TextStyle(fontWeight: FontWeight.w600)),
               subtitle: const Text('Switch between light and dark Material 3 palette'),

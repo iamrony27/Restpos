@@ -864,12 +864,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           },
                           child: Card(
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(18),
                             side: order.isDeleted
                                 ? BorderSide(color: const Color(0xFFEF4444).withOpacity(0.4), width: 1.2)
                                 : order.isEdited
                                     ? BorderSide(color: const Color(0xFFF59E0B).withOpacity(0.4), width: 1.2)
-                                    : BorderSide.none,
+                                    : BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.35), width: 1),
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
