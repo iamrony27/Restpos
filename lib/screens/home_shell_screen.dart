@@ -168,53 +168,73 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
         curve: Curves.easeInOutCubic,
         offset: _isBottomBarVisible ? Offset.zero : const Offset(0, 1.4),
         child: SafeArea(
-          child: Container(
-            height: 68,
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 9),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(34),
-              boxShadow: [
-                BoxShadow(
-                  color: widget.isDarkMode
-                      ? Colors.black.withOpacity(0.55)
-                      : const Color(0xFF2E1A11).withOpacity(0.25),
-                  blurRadius: 28,
-                  offset: const Offset(0, 10),
-                ),
-                BoxShadow(
-                  color: CulinaryColors.flameOrange.withOpacity(0.12),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(34),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: widget.isDarkMode
-                        ? const Color(0xFF141210).withOpacity(0.92)
-                        : const Color(0xFF261D19).withOpacity(0.94),
-                    borderRadius: BorderRadius.circular(34),
-                    border: Border.all(
-                      color: CulinaryColors.flameOrange.withOpacity(0.28),
-                      width: 1.4,
+          child: SizedBox(
+            height: 82,
+            child: Stack(
+              alignment: Alignment.bottomCenter,
+              clipBehavior: Clip.none,
+              children: [
+                // Bottom bar pill
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 8,
+                  child: Container(
+                    height: 64,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(34),
+                      boxShadow: [
+                        BoxShadow(
+                          color: widget.isDarkMode
+                              ? Colors.black.withOpacity(0.55)
+                              : const Color(0xFF2E1A11).withOpacity(0.25),
+                          blurRadius: 28,
+                          offset: const Offset(0, 10),
+                        ),
+                        BoxShadow(
+                          color: CulinaryColors.flameOrange.withOpacity(0.12),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(34),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: widget.isDarkMode
+                                ? const Color(0xFF141210).withOpacity(0.92)
+                                : const Color(0xFF261D19).withOpacity(0.94),
+                            borderRadius: BorderRadius.circular(34),
+                            border: Border.all(
+                              color: CulinaryColors.flameOrange.withOpacity(0.28),
+                              width: 1.4,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              _buildNavItem(0, Icons.dashboard_outlined, Icons.dashboard_rounded, 'Dashboard'),
+                              _buildNavItem(2, Icons.inventory_2_outlined, Icons.inventory_2_rounded, 'Items'),
+                              const SizedBox(width: 58), // Space for floating center FAB
+                              _buildNavItem(3, Icons.table_restaurant_outlined, Icons.table_restaurant_rounded, 'Tables'),
+                              _buildNavItem(4, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Orders'),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildNavItem(0, Icons.dashboard_outlined, Icons.dashboard_rounded, 'Dashboard'),
-                      _buildNavItem(2, Icons.inventory_2_outlined, Icons.inventory_2_rounded, 'Items'),
-                      _buildCenterAddButton(),
-                      _buildNavItem(3, Icons.table_restaurant_outlined, Icons.table_restaurant_rounded, 'Tables'),
-                      _buildNavItem(4, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Orders'),
-                    ],
-                  ),
                 ),
-              ),
+
+                // Elevated Floating Center FAB
+                Positioned(
+                  bottom: 18,
+                  child: _buildCenterAddButton(),
+                ),
+              ],
             ),
           ),
         ),
@@ -270,37 +290,49 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
 
   Widget _buildCenterAddButton() {
     final isPosSelected = _currentIndex == 1;
+    final haloColor = widget.isDarkMode ? const Color(0xFF141210) : const Color(0xFF261D19);
+
     return GestureDetector(
       onTap: () => _onTabSelected(1),
       child: Container(
-        width: 48,
-        height: 48,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
+          color: haloColor,
           shape: BoxShape.circle,
-          gradient: LinearGradient(
-            colors: isPosSelected
-                ? [CulinaryColors.flameOrange, CulinaryColors.flameOrange]
-                : [CulinaryColors.flameOrange, CulinaryColors.tandoorSpice],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          border: Border.all(
-            color: isPosSelected ? Colors.white : Colors.white.withOpacity(0.35),
-            width: isPosSelected ? 2.2 : 1.2,
-          ),
           boxShadow: [
             BoxShadow(
-              color: CulinaryColors.flameOrange.withOpacity(isPosSelected ? 0.65 : 0.42),
-              blurRadius: isPosSelected ? 14 : 10,
-              offset: const Offset(0, 4),
+              color: CulinaryColors.flameOrange.withOpacity(isPosSelected ? 0.65 : 0.38),
+              blurRadius: isPosSelected ? 18 : 12,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
-        child: const Icon(
-          Icons.add_rounded,
-          color: Colors.white,
-          size: 30,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeInOut,
+          width: isPosSelected ? 56 : 52,
+          height: isPosSelected ? 56 : 52,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: isPosSelected
+                  ? [CulinaryColors.flameOrange, const Color(0xFFFF7A00)]
+                  : [CulinaryColors.flameOrange, CulinaryColors.tandoorSpice],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            border: Border.all(
+              color: isPosSelected ? Colors.white : Colors.white.withOpacity(0.4),
+              width: isPosSelected ? 2.4 : 1.4,
+            ),
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.add_rounded,
+              color: Colors.white,
+              size: 32,
+            ),
+          ),
         ),
       ),
     );
