@@ -1,103 +1,82 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <!-- Rest POS - Master Monochrome Brand Vector Symbol -->
-  <!-- Color: Solid #FF6B00 | Single Color Flat Vector Design -->
-  <g fill="#FF6B00">
-    <!-- POS Terminal Monitor Bezel (Outer Frame with Cutout Screen) -->
-    <path fill-rule="evenodd" d="
-      M 124,72
-      C 95,72 72,95 72,124
-      L 72,308
-      C 72,337 95,360 124,360
-      L 388,360
-      C 417,360 440,337 440,308
-      L 440,124
-      C 440,95 417,72 388,72
-      Z
-      M 112,112
-      C 112,103 119,96 128,96
-      L 384,96
-      C 393,96 400,103 400,112
-      L 400,320
-      C 400,329 393,336 384,336
-      L 128,336
-      C 119,336 112,329 112,320
-      Z
-    "/>
+  <!-- Color: Solid #FF6B00 on Transparent Background -->
+  <g transform="translate(256,256) scale(0.86) translate(-256,-256)">
+    
+    <!-- Tablet Bezel & Keypad Elements -->
+    <g fill="none" stroke="#FF6B00" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Outer Tablet Bezel Outline -->
+      <path d="
+        M 364,242
+        L 364,152
+        C 364,130 346,114 324,114
+        L 156,114
+        C 134,114 116,130 116,152
+        L 116,360
+        C 116,382 134,398 156,398
+        L 244,398
+      " stroke-width="20"/>
 
-    <!-- POS Integrated Card Reader (Right side contactless/chip dock) -->
-    <rect x="448" y="156" width="22" height="108" rx="11"/>
+      <!-- Top Speaker Notch Pill -->
+      <line x1="216" y1="140" x2="264" y2="140" stroke-width="14"/>
 
-    <!-- POS Terminal Stand (Angled Neck) -->
-    <path d="
-      M 216,360
-      L 196,432
-      L 316,432
-      L 296,360
-      Z
-    "/>
+      <!-- Screen Header Horizontal Separator -->
+      <line x1="128" y1="174" x2="352" y2="174" stroke-width="16"/>
 
-    <!-- POS Countertop Base / Foot -->
-    <rect x="136" y="424" width="240" height="36" rx="18"/>
+      <!-- Keypad Button Pills (Row 1 - 4 buttons) -->
+      <line x1="150" y1="218" x2="176" y2="218" stroke-width="22"/>
+      <line x1="202" y1="218" x2="228" y2="218" stroke-width="22"/>
+      <line x1="254" y1="218" x2="280" y2="218" stroke-width="22"/>
+      <line x1="306" y1="218" x2="332" y2="218" stroke-width="22"/>
 
-    <!-- Inside Screen: Central Dining Plate (Solid rim with concentric inner cutout) -->
-    <path fill-rule="evenodd" d="
-      M 256,150
-      C 220,150 191,179 191,215
-      C 191,251 220,280 256,280
-      C 292,280 321,251 321,215
-      C 321,179 292,150 256,150
-      Z
-      M 256,174
-      C 234,174 215,193 215,215
-      C 215,237 234,256 256,256
-      C 278,256 297,237 297,215
-      C 297,193 278,174 256,174
-      Z
-    "/>
+      <!-- Keypad Button Pills (Row 2 - 3 buttons) -->
+      <line x1="150" y1="268" x2="176" y2="268" stroke-width="22"/>
+      <line x1="202" y1="268" x2="228" y2="268" stroke-width="22"/>
+      <line x1="254" y1="268" x2="280" y2="268" stroke-width="22"/>
 
-    <!-- Inside Plate: Center Dish Accent Dot -->
-    <circle cx="256" cy="215" r="14"/>
+      <!-- Keypad Button Pills (Row 3 - 2 buttons) -->
+      <line x1="150" y1="318" x2="176" y2="318" stroke-width="22"/>
+      <line x1="202" y1="318" x2="228" y2="318" stroke-width="22"/>
+    </g>
 
-    <!-- Inside Screen (Left): Dining Fork -->
-    <!-- 3 Tines, Shoulder, and Ergonomic Handle -->
-    <path d="
-      M 148,142
-      C 148,137 152,133 156,133
-      C 160,133 164,137 164,142
-      L 164,180
-      L 168,180
-      L 168,142
-      C 168,137 172,133 176,133
-      C 180,133 184,137 184,142
-      L 184,180
-      L 188,180
-      L 188,142
-      C 188,137 192,133 196,133
-      C 200,133 204,137 204,142
-      L 204,188
-      C 204,204 194,217 182,221
-      L 182,284
-      C 182,289 178,293 173,293
-      C 168,293 164,289 164,284
-      L 164,221
-      C 152,217 142,204 142,188
-      L 142,142
-      C 142,137 146,133 148,142
+    <!-- Dining Fork (Solid #FF6B00) -->
+    <path fill="#FF6B00" d="
+      M 280,286
+      C 280,280 285,275 291,275
+      C 297,275 302,280 302,286
+      L 302,316
+      L 309,316
+      L 309,286
+      C 309,280 314,275 320,275
+      C 326,275 331,280 331,286
+      L 331,316
+      L 338,316
+      L 338,286
+      C 338,280 343,275 349,275
+      C 355,275 360,280 360,286
+      L 360,324
+      C 360,344 345,356 328,358
+      L 328,416
+      C 328,422.6 322.6,428 316,428
+      C 309.4,428 304,422.6 304,416
+      L 304,358
+      C 287,356 280,344 280,324
       Z
     "/>
 
-    <!-- Inside Screen (Right): Dining Knife -->
-    <!-- Curved Blade, Bolster, and Matching Handle -->
-    <path d="
-      M 340,134
-      C 358,136 372,154 372,188
-      C 372,214 362,228 350,233
-      L 350,284
-      C 350,289 346,293 341,293
-      C 336,293 332,289 332,284
-      L 332,143
-      C 332,138 336,134 340,134
+    <!-- Dining Knife (Solid #FF6B00) -->
+    <path fill="#FF6B00" d="
+      M 382,274
+      C 394,280 404,298 404,330
+      C 404,362 395,378 382,384
+      L 382,416
+      C 382,422.6 376.6,428 370,428
+      C 363.4,428 358,422.6 358,416
+      L 358,282
+      C 358,275 364,270 371,270
+      C 375,270 379,271.5 382,274
       Z
     "/>
+
   </g>
 </svg>

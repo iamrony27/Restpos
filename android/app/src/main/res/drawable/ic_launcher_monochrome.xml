@@ -3,37 +3,58 @@
     android:height="108dp"
     android:viewportWidth="512"
     android:viewportHeight="512">
-    <!-- Rest POS Monochrome Adaptive Icon (Material You Themed Icons) -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:fillType="evenOdd"
-        android:pathData="M148,96 C124,96 104,116 104,140 L104,292 C104,316 124,336 148,336 L364,336 C388,336 408,316 408,292 L408,140 C408,116 388,96 364,96 Z M136,128 C136,121 142,115 149,115 L363,115 C370,115 376,121 376,128 L376,304 C376,311 370,317 363,317 L149,317 C142,317 136,311 136,304 Z"/>
+    <!-- Rest POS Android 13+ Themed/Monochrome Launcher Icon -->
     
+    <!-- Outer Tablet Bezel Outline -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M414,166 C420,166 425,171 425,177 L425,255 C425,261 420,266 414,266 C408,266 403,261 403,255 L403,177 C403,171 408,166 414,166 Z"/>
+        android:pathData="M 352,236 L 352,146 C 352,130 338,118 322,118 L 148,118 C 132,118 118,130 118,146 L 118,374 C 118,390 132,402 148,402 L 242,402"
+        android:strokeWidth="14"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
 
+    <!-- Top Speaker Pill -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M224,336 L208,396 L304,396 L288,336 Z"/>
+        android:pathData="M 218,138 L 252,138"
+        android:strokeWidth="10"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"/>
 
+    <!-- Screen Header Separator Line -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M174,390 C165,390 158,397 158,406 C158,415 165,422 174,422 L338,422 C347,422 354,415 354,406 C354,397 347,390 338,390 Z"/>
+        android:pathData="M 126,168 L 344,168"
+        android:strokeWidth="12"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"/>
 
+    <!-- Keypad Button Pills (Row 1) -->
     <path
-        android:fillColor="#FFFFFF"
-        android:fillType="evenOdd"
-        android:pathData="M256,162 C226,162 202,186 202,216 C202,246 226,270 256,270 C286,270 310,246 310,216 C310,186 286,162 256,162 Z M256,182 C237,182 222,197 222,216 C222,235 237,250 256,250 C275,250 290,235 290,216 C290,197 275,182 256,182 Z"/>
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M256,204 C249.4,204 244,209.4 244,216 C244,222.6 249.4,228 256,228 C262.6,228 268,222.6 268,216 C268,209.4 262.6,204 256,204 Z"/>
+        android:pathData="M 146,206 L 168,206 M 194,206 L 216,206 M 242,206 L 264,206 M 290,206 L 312,206"
+        android:strokeWidth="16"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"/>
 
+    <!-- Keypad Button Pills (Row 2) -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M166,156 C166,152 169,149 172,149 C175,149 178,152 178,156 L178,187 L181,187 L181,156 C181,152 184,149 187,149 C190,149 193,152 193,156 L193,187 L196,187 L196,156 C196,152 199,149 202,149 C205,149 208,152 208,156 L208,193 C208,206 199,217 189,220 L189,271 C189,275 186,278 182,278 C178,278 175,275 175,271 L175,220 C165,217 156,206 156,193 L156,156 C156,152 166,149 166,156 Z"/>
+        android:pathData="M 146,248 L 168,248 M 194,248 L 216,248 M 242,248 L 264,248"
+        android:strokeWidth="16"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"/>
 
+    <!-- Keypad Button Pills (Row 3) -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M325,149 C340,151 351,165 351,193 C351,214 343,226 333,230 L333,271 C333,275 330,278 326,278 C322,278 319,275 319,271 L319,156 C319,152 322,149 325,149 Z"/>
+        android:pathData="M 146,290 L 168,290 M 194,290 L 216,290"
+        android:strokeWidth="16"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"/>
+
+    <!-- Dining Fork -->
+    <path
+        android:pathData="M 260,274 C 260,268 264,264 270,264 C 276,264 280,268 280,274 L 280,314 C 280,319 283,322 287,322 C 291,322 294,319 294,314 L 294,274 C 294,268 298,264 304,264 C 310,264 314,268 314,274 L 314,314 C 314,319 317,322 321,322 C 325,322 328,319 328,314 L 328,274 C 328,268 332,264 338,264 C 344,264 348,268 348,274 L 348,328 C 348,345 336,356 322,358 L 322,402 C 322,408 317,412 311,412 C 305,412 300,408 300,402 L 300,358 C 286,356 260,345 260,328 Z"
+        android:fillColor="#FFFFFF"/>
+
+    <!-- Dining Knife -->
+    <path
+        android:pathData="M 386,258 C 392,262 396,268 396,276 L 396,402 C 396,408 391,412 385,412 C 379,412 374,408 374,402 L 374,354 C 364,346 358,332 358,316 C 358,288 372,266 386,258 Z"
+        android:fillColor="#FFFFFF"/>
 </vector>

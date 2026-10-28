@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Rest POS - Master Application Icon SVG -->
+  <!-- Solid Brand Orange Canvas (#FF6B00) -->
+  <rect width="1024" height="1024" fill="#FF6B00" />
+
+  <g transform="translate(40, 10)">
+    <!-- Stand / Base -->
+    <path d="M 390 626 
+             L 364 700 
+             C 356 724, 342 734, 330 740 
+             L 430 748 
+             C 438 748, 444 740, 448 728 
+             L 556 728 
+             C 552 690, 560 658, 568 620 Z" 
+          fill="#FFFFFF" />
+    <path d="M 326 738 
+             C 320 742, 318 750, 324 756 
+             C 334 766, 360 774, 430 776 
+             L 660 744 
+             C 668 742, 668 732, 660 726 
+             L 540 724 
+             L 440 724 
+             C 426 736, 380 736, 326 738 Z" 
+          fill="#FFFFFF" />
+
+    <!-- Terminal Screen Shell & Bezel (Tilted Perspective) -->
+    <!-- Left Depth Rim -->
+    <path d="M 238 274 
+             C 232 284, 230 300, 234 322 
+             L 288 610 
+             C 294 636, 314 650, 338 644 
+             L 302 638 
+             C 278 638, 260 620, 252 590 
+             L 208 316 
+             C 202 286, 216 266, 238 274 Z" 
+          fill="#FFFFFF" opacity="0.95" />
+
+    <!-- Main Front Face (Rounded Parallelogram Bezel) -->
+    <path d="M 248 268 
+             C 240 274, 238 288, 242 306 
+             L 294 602 
+             C 300 628, 320 642, 348 638 
+             L 736 606 
+             C 762 602, 776 584, 772 558 
+             L 720 298 
+             C 716 274, 696 260, 670 262 
+             Z" 
+          fill="#FFFFFF" />
+
+    <!-- Inner Screen Cutout (Orange) -->
+    <path d="M 278 296 
+             C 274 300, 272 310, 276 324 
+             L 322 572 
+             C 326 590, 338 598, 358 596 
+             L 704 570 
+             C 722 568, 730 556, 728 538 
+             L 686 318 
+             C 682 302, 670 292, 652 294 
+             Z" 
+          fill="#FF6B00" />
+
+    <!-- Plate, Fork & Knife Emblem on Angled Screen -->
+    <g transform="translate(506, 442) skewY(-3.5) scale(0.92, 1.0)">
+      <!-- Plate Rim (White circle with inner cutout) -->
+      <!-- Left Outer Rim Arc -->
+      <path d="M -30 -115 
+               A 118 118 0 0 0 -30 115 
+               A 94 94 0 0 1 -30 -115 Z" 
+            fill="#FFFFFF" />
+      <!-- Right Outer Rim Arc -->
+      <path d="M 30 -115 
+               A 94 94 0 0 1 30 115 
+               A 118 118 0 0 0 30 -115 Z" 
+            fill="#FFFFFF" />
+
+      <!-- Fork (Left) -->
+      <path d="M -72 -98 L -72 -42 C -72 -22, -48 -22, -48 -42 L -48 -98 L -53 -98 L -53 -52 L -57 -52 L -57 -98 L -63 -98 L -63 -52 L -67 -52 L -67 -98 Z" fill="#FFFFFF" />
+      <path d="M -64 -25 C -64 -15, -67 40, -67 95 C -67 105, -53 105, -53 95 C -53 40, -56 -15, -56 -25 Z" fill="#FFFFFF" />
+
+      <!-- Knife (Right) -->
+      <path d="M 48 -98 C 58 -90, 74 -50, 74 -20 L 48 -20 Z" fill="#FFFFFF" />
+      <path d="M 48 -15 L 48 95 C 48 105, 62 105, 62 95 L 62 -15 Z" fill="#FFFFFF" />
+    </g>
+  </g>
+</svg>
