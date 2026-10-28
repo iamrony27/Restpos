@@ -1256,7 +1256,7 @@ class _PosScreenState extends State<PosScreen> {
                                                         ),
                                                         child: Icon(
                                                           Icons.remove_rounded,
-                                                          size: 15,
+                                                          size: 17,
                                                           color: theme.colorScheme.primary,
                                                         ),
                                                       ),
@@ -1286,7 +1286,7 @@ class _PosScreenState extends State<PosScreen> {
                                                         ),
                                                         child: const Icon(
                                                           Icons.add_rounded,
-                                                          size: 15,
+                                                          size: 17,
                                                           color: Colors.white,
                                                         ),
                                                       ),
@@ -1312,7 +1312,7 @@ class _PosScreenState extends State<PosScreen> {
                                                     ),
                                                     child: Icon(
                                                       item.isAvailable ? Icons.add_rounded : Icons.block_rounded,
-                                                      size: 18,
+                                                      size: 20,
                                                       color: item.isAvailable ? theme.colorScheme.primary : Colors.grey,
                                                     ),
                                                   ),
@@ -1458,51 +1458,31 @@ class _PosScreenState extends State<PosScreen> {
                                       // Details
                                       Expanded(
                                         child: Padding(
-                                          padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+                                          padding: const EdgeInsets.fromLTRB(10, 10, 4, 8),
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            mainAxisAlignment: MainAxisAlignment.start,
                                             children: [
                                               Text(
                                                 item.name,
-                                                maxLines: 1,
+                                                maxLines: 2,
                                                 overflow: TextOverflow.ellipsis,
-                                                style: theme.textTheme.titleSmall?.copyWith(
-                                                  fontWeight: FontWeight.w700,
+                                                style: theme.textTheme.titleMedium?.copyWith(
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: 15,
+                                                  height: 1.18,
                                                   decoration: item.isAvailable ? null : TextDecoration.lineThrough,
                                                 ),
                                               ),
 
-                                            const SizedBox(height: 3),
-                                            Wrap(
-                                              crossAxisAlignment: WrapCrossAlignment.center,
-                                              spacing: 8,
-                                              runSpacing: 2,
-                                              children: [
-                                                Text(
-                                                  item.formattedPrice,
-                                                  style: theme.textTheme.titleSmall?.copyWith(
-                                                    fontWeight: FontWeight.w800,
-                                                    color: item.isAvailable ? CulinaryColors.flameOrange : Colors.grey,
-                                                  ),
-                                                ),
-                                                if (cartLine != null)
-                                                  Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                                    decoration: BoxDecoration(
-                                                      color: theme.colorScheme.primary,
-                                                      borderRadius: BorderRadius.circular(8),
-                                                    ),
-                                                    child: Text(
-                                                      '${cartLine.quantity} in cart',
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 10,
-                                                        fontWeight: FontWeight.w800,
-                                                      ),
-                                                    ),
-                                                  ),
-                                              ],
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              item.formattedPrice,
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w900,
+                                                color: item.isAvailable ? CulinaryColors.flameOrange : Colors.grey,
+                                              ),
                                             ),
 
                                           ],
@@ -1512,52 +1492,66 @@ class _PosScreenState extends State<PosScreen> {
 
                                       // Quick Add or Action button
                                       if (item.isAvailable && cartLine != null && cartLine.quantity > 0)
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            IconButton(
-                                              icon: Icon(Icons.remove_circle_outline_rounded, color: theme.colorScheme.primary, size: 24),
-                                              padding: EdgeInsets.zero,
-                                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                              onPressed: () {
-                                                NativeApiChannel.triggerNativeHaptic();
-                                                posProvider.decrementQuantity(item.id);
-                                              },
-                                            ),
-                                            Text(
-                                              '${cartLine.quantity}',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w800,
-                                                fontSize: 14,
-                                                color: theme.colorScheme.primary,
+                                        Padding(
+                                          padding: const EdgeInsets.only(right: 6),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              IconButton(
+                                                icon: Icon(Icons.remove_circle_rounded, color: theme.colorScheme.primary, size: 32),
+                                                iconSize: 32,
+                                                padding: EdgeInsets.zero,
+                                                constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+                                                onPressed: () {
+                                                  NativeApiChannel.triggerNativeHaptic();
+                                                  posProvider.decrementQuantity(item.id);
+                                                },
                                               ),
-                                            ),
-                                            IconButton(
-                                              icon: Icon(Icons.add_circle_rounded, color: theme.colorScheme.primary, size: 24),
-                                              padding: EdgeInsets.zero,
-                                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                              onPressed: () {
-                                                NativeApiChannel.triggerNativeHaptic();
-                                                posProvider.addToCart(item);
-                                              },
-                                            ),
-                                          ],
+                                              Padding(
+                                                padding: const EdgeInsets.symmetric(horizontal: 4),
+                                                child: Text(
+                                                  '${cartLine.quantity}',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w900,
+                                                    fontSize: 16,
+                                                    color: theme.colorScheme.primary,
+                                                  ),
+                                                ),
+                                              ),
+                                              IconButton(
+                                                icon: Icon(Icons.add_circle_rounded, color: theme.colorScheme.primary, size: 32),
+                                                iconSize: 32,
+                                                padding: EdgeInsets.zero,
+                                                constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+                                                onPressed: () {
+                                                  NativeApiChannel.triggerNativeHaptic();
+                                                  posProvider.addToCart(item);
+                                                },
+                                              ),
+                                            ],
+                                          ),
                                         )
                                       else
-                                        IconButton(
-                                          icon: Icon(
-                                            item.isAvailable ? Icons.add_circle_rounded : Icons.more_vert_rounded,
-                                            color: item.isAvailable ? theme.colorScheme.primary : Colors.grey,
-                                            size: 26,
+                                        Padding(
+                                          padding: const EdgeInsets.only(right: 6),
+                                          child: IconButton(
+                                            icon: Icon(
+                                              item.isAvailable ? Icons.add_circle_rounded : Icons.more_vert_rounded,
+                                              color: item.isAvailable ? theme.colorScheme.primary : Colors.grey,
+                                              size: 34,
+                                            ),
+                                            iconSize: 34,
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                                            onPressed: () {
+                                              if (item.isAvailable) {
+                                                posProvider.addToCart(item);
+                                                NativeApiChannel.triggerNativeHaptic();
+                                              } else {
+                                                _showAddEditDishDialog(context, item);
+                                              }
+                                            },
                                           ),
-                                          onPressed: () {
-                                            if (item.isAvailable) {
-                                              posProvider.addToCart(item);
-                                              NativeApiChannel.triggerNativeHaptic();
-                                            } else {
-                                              _showAddEditDishDialog(context, item);
-                                            }
-                                          },
                                         ),
                                     ],
                                   ),
