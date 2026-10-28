@@ -8,12 +8,12 @@ import '../../models/order_model.dart';
 import '../../providers/menu_provider.dart';
 import '../../providers/order_provider.dart';
 import '../../providers/pos_provider.dart';
-import '../../providers/table_provider.dart';
 import '../../widgets/dietary_badge.dart';
 import '../reports/sales_report_screen.dart';
 import '../setup/setup_wizard_screen.dart';
 
 enum ChartMode { itemWise, amountWise }
+enum ItemsSoldInterval { today, weekly, monthly }
 
 class DashboardScreen extends StatefulWidget {
   final Function(int) onNavigateTab;
@@ -26,13 +26,13 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   ChartMode _chartMode = ChartMode.amountWise;
+  ItemsSoldInterval _itemsInterval = ItemsSoldInterval.today;
   int _touchedChartIndex = -1;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final orderProvider = context.watch<OrderProvider>();
-    final tableProvider = context.watch<TableProvider>();
     final posProvider = context.watch<PosProvider>();
     final menuProvider = context.watch<MenuProvider>();
     final profile = posProvider.profile;
@@ -40,8 +40,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final totalRevenue = orderProvider.totalRevenueRupees;
     final orderCount = orderProvider.orderCount;
     final atv = orderProvider.averageTicketValueRupees;
-    final occupiedTables = tableProvider.occupiedCount;
-    final availableTables = tableProvider.availableCount;
     final bestsellers = menuProvider.topSellingItems;
 
     return Scaffold(
@@ -49,30 +47,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
         titleSpacing: 16,
         toolbarHeight: 74,
         title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Full Restaurant Name (No truncation)
-            Text(
-              profile.name,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w900,
-                color: CulinaryColors.tandoorOrange,
-                fontSize: 20,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Full Restaurant Name (No truncation)
+              Text(
+                profile.name,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: CulinaryColors.tandoorOrange,
+                  fontSize: 20,
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            // Tagline & FSSAI (Clean two-line formatting)
-            Text(
-              '${profile.tagline} • FSSAI: ${profile.fssai.isNotEmpty ? profile.fssai : "11223344556677"}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.outline,
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
+              const SizedBox(height: 2),
+              // Restaurant Tagline (Clean, FSSAI removed as requested)
+              Text(
+                profile.tagline,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.outline,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         actions: [
           // Dynamic Thermal Printer Connect Status Badge
           GestureDetector(
@@ -154,6 +152,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 );
               },
             ),
+
+          // Settings Action
+          IconButton(
+            tooltip: 'Settings',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () {
+              NativeApiChannel.triggerNativeHaptic();
+              widget.onNavigateTab(4);
+            },
+          ),
 
           const SizedBox(width: 6),
         ],
@@ -283,15 +291,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildVibrantStatCard(
+                child: _buildItemsSoldCard(
                   theme: theme,
-                  title: 'Floor Occupancy',
-                  value: '$occupiedTables / ${tableProvider.tables.length}',
-                  subtitle: '$availableTables tables available',
-                  icon: Icons.table_restaurant_rounded,
-                  color: CulinaryColors.amethystViolet,
-                  gradientColors: [const Color(0xFF8B5CF6), const Color(0xFFA855F7)],
-                  onTap: () => widget.onNavigateTab(2),
+                  orderProvider: orderProvider,
                 ),
               ),
             ],
@@ -524,13 +526,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => widget.onNavigateTab(1), // Go to POS billing
-        icon: const Icon(Icons.point_of_sale_rounded),
-        backgroundColor: CulinaryColors.tandoorOrange,
-        foregroundColor: Colors.white,
-        label: const Text('New Order', style: TextStyle(fontWeight: FontWeight.w800)),
-      ),
     );
   }
 
@@ -539,13 +534,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     OrderProvider orderProvider,
     List<dynamic> bestsellers,
   ) {
-    // Top 4 slices + other
+    // 5 completely distinct, vibrant colors for each dish
     final colors = [
-      CulinaryColors.flameOrange,
-      CulinaryColors.tandoorSpice,
-      CulinaryColors.emeraldGreen,
-      CulinaryColors.royalBlue,
-      CulinaryColors.amethystViolet,
+      const Color(0xFFEA580C), // Vivid Tandoor Orange (Butter Chicken)
+      const Color(0xFF0284C7), // Royal Azure Blue (Chicken Biryani)
+      const Color(0xFF10B981), // Emerald Green (Paneer Butter)
+      const Color(0xFF8B5CF6), // Amethyst Violet (Butter Naan)
+      const Color(0xFFF59E0B), // Warm Amber Gold (Others & Drinks)
     ];
 
     final isItemWise = _chartMode == ChartMode.itemWise;
@@ -857,6 +852,131 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildItemsSoldCard({
+    required ThemeData theme,
+    required OrderProvider orderProvider,
+  }) {
+    final int itemsCount;
+    final String intervalLabel;
+    switch (_itemsInterval) {
+      case ItemsSoldInterval.today:
+        itemsCount = orderProvider.itemsSoldToday;
+        intervalLabel = "Today's";
+        break;
+      case ItemsSoldInterval.weekly:
+        itemsCount = orderProvider.itemsSoldThisWeek;
+        intervalLabel = "Weekly";
+        break;
+      case ItemsSoldInterval.monthly:
+        itemsCount = orderProvider.itemsSoldThisMonth;
+        intervalLabel = "Monthly";
+        break;
+    }
+
+    const color = CulinaryColors.amethystViolet;
+    const gradientColors = [Color(0xFF8B5CF6), Color(0xFFA855F7)];
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: gradientColors),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.lunch_dining_rounded, size: 16, color: Colors.white),
+                ),
+                // Compact Pill Selector for Today / Week / Month
+                Container(
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding: const EdgeInsets.all(2),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildIntervalChip('Today', ItemsSoldInterval.today, color),
+                      _buildIntervalChip('Week', ItemsSoldInterval.weekly, color),
+                      _buildIntervalChip('Month', ItemsSoldInterval.monthly, color),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '$itemsCount Items',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w900,
+                fontSize: 18,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '$intervalLabel Items Sold',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
+                fontSize: 10,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIntervalChip(String label, ItemsSoldInterval interval, Color activeColor) {
+    final isSelected = _itemsInterval == interval;
+    return GestureDetector(
+      onTap: () {
+        NativeApiChannel.triggerNativeHaptic();
+        setState(() => _itemsInterval = interval);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+        decoration: BoxDecoration(
+          color: isSelected ? activeColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+            color: isSelected ? Colors.white : activeColor,
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import '../core/channels/native_api_channel.dart';
@@ -161,36 +162,44 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
         offset: _isBottomBarVisible ? Offset.zero : const Offset(0, 1.4),
         child: SafeArea(
           child: Container(
-            height: 66,
+            height: 68,
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             decoration: BoxDecoration(
-              color: widget.isDarkMode
-                  ? const Color(0xFF1E1E24)
-                  : const Color(0xFFFAF8F5),
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(
-                color: theme.colorScheme.outlineVariant.withOpacity(0.4),
-                width: 1,
-              ),
+              borderRadius: BorderRadius.circular(34),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(widget.isDarkMode ? 0.45 : 0.12),
-                  blurRadius: 20,
-                  offset: const Offset(0, 6),
+                  color: Colors.black.withOpacity(widget.isDarkMode ? 0.40 : 0.10),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(32),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildNavItem(0, Icons.dashboard_outlined, Icons.dashboard_rounded, 'Dashboard'),
-                  _buildNavItem(1, Icons.point_of_sale_outlined, Icons.point_of_sale_rounded, 'POS'),
-                  _buildNavItem(2, Icons.table_restaurant_outlined, Icons.table_restaurant_rounded, 'Tables'),
-                  _buildNavItem(3, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Orders'),
-                  _buildNavItem(4, Icons.settings_outlined, Icons.settings_rounded, 'Settings'),
-                ],
+              borderRadius: BorderRadius.circular(34),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: widget.isDarkMode
+                        ? const Color(0xFF1E1E24).withOpacity(0.72)
+                        : Colors.white.withOpacity(0.75),
+                    borderRadius: BorderRadius.circular(34),
+                    border: Border.all(
+                      color: (widget.isDarkMode ? Colors.white : Colors.black).withOpacity(0.09),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildNavItem(0, Icons.dashboard_outlined, Icons.dashboard_rounded, 'Dashboard'),
+                      _buildNavItem(1, Icons.point_of_sale_outlined, Icons.point_of_sale_rounded, 'POS'),
+                      _buildCenterAddButton(),
+                      _buildNavItem(2, Icons.table_restaurant_outlined, Icons.table_restaurant_rounded, 'Tables'),
+                      _buildNavItem(3, Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Orders'),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -240,6 +249,44 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCenterAddButton() {
+    return GestureDetector(
+      onTap: () {
+        NativeApiChannel.triggerNativeHaptic();
+        // Switches to POS billing to start new order
+        _onTabSelected(1);
+      },
+      child: Container(
+        width: 46,
+        height: 46,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            colors: [
+              CulinaryColors.flameOrange,
+              CulinaryColors.tandoorSpice,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: CulinaryColors.flameOrange.withOpacity(0.42),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Icon(
+          Icons.add_rounded,
+          color: Colors.white,
+          size: 28,
         ),
       ),
     );

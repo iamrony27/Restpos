@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import '../../core/animations/bouncing_button.dart';
 import '../../core/channels/native_api_channel.dart';
+import '../../core/theme/color_schemes.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../models/menu_item.dart';
 import '../../models/order_model.dart';
@@ -400,10 +401,18 @@ class _PosScreenState extends State<PosScreen> {
           style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline_rounded),
-            tooltip: 'Add New Dish',
-            onPressed: () => _showAddEditDishDialog(context),
+          Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: ActionChip(
+              avatar: const Icon(Icons.add_circle_rounded, size: 16, color: CulinaryColors.flameOrange),
+              label: const Text('Add Item', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+              side: const BorderSide(color: CulinaryColors.flameOrange, width: 1.2),
+              backgroundColor: CulinaryColors.flameOrange.withOpacity(0.08),
+              onPressed: () {
+                NativeApiChannel.triggerNativeHaptic();
+                _showAddEditDishDialog(context);
+              },
+            ),
           ),
           // Order Mode Switcher (Dine-In / Takeaway)
           Padding(
@@ -575,6 +584,17 @@ class _PosScreenState extends State<PosScreen> {
                   selected: _dietaryFilter == DietaryType.nonVeg,
                   onSelected: (sel) => setState(() => _dietaryFilter = sel ? DietaryType.nonVeg : null),
                 ),
+                const SizedBox(width: 8),
+                ActionChip(
+                  avatar: const Icon(Icons.add_rounded, size: 16, color: CulinaryColors.flameOrange),
+                  label: const Text('+ Add Item', style: TextStyle(fontWeight: FontWeight.w700, color: CulinaryColors.flameOrange)),
+                  backgroundColor: CulinaryColors.flameOrange.withOpacity(0.08),
+                  side: BorderSide(color: CulinaryColors.flameOrange.withOpacity(0.4)),
+                  onPressed: () {
+                    NativeApiChannel.triggerNativeHaptic();
+                    _showAddEditDishDialog(context);
+                  },
+                ),
               ],
             ),
           ),
@@ -591,6 +611,12 @@ class _PosScreenState extends State<PosScreen> {
                         Icon(Icons.search_off_rounded, size: 54, color: theme.colorScheme.outline),
                         const SizedBox(height: 12),
                         Text('No dishes match your filter', style: theme.textTheme.titleMedium),
+                        const SizedBox(height: 14),
+                        ElevatedButton.icon(
+                          onPressed: () => _showAddEditDishDialog(context),
+                          icon: const Icon(Icons.add_rounded),
+                          label: const Text('Add New Dish'),
+                        ),
                       ],
                     ),
                   )
@@ -618,7 +644,7 @@ class _PosScreenState extends State<PosScreen> {
                         crossAxisCount: 2,
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
-                        childAspectRatio: 0.74,
+                        childAspectRatio: 0.81,
                       ),
                       itemCount: dishes.length,
                       itemBuilder: (context, index) {
@@ -665,12 +691,12 @@ class _PosScreenState extends State<PosScreen> {
                                       if (item.imageUri != null)
                                         Image.asset(
                                           item.imageUri!,
-                                          height: 102,
+                                          height: 124,
                                           width: double.infinity,
                                           fit: BoxFit.cover,
                                           errorBuilder: (context, error, stackTrace) {
                                             return Container(
-                                              height: 102,
+                                              height: 124,
                                               color: theme.colorScheme.surfaceContainerHighest,
                                               child: Icon(Icons.restaurant_rounded, color: theme.colorScheme.outline),
                                             );
@@ -678,14 +704,14 @@ class _PosScreenState extends State<PosScreen> {
                                         )
                                       else
                                         Container(
-                                          height: 102,
+                                          height: 124,
                                           color: theme.colorScheme.surfaceContainerHighest,
                                           child: Icon(Icons.restaurant_rounded, color: theme.colorScheme.outline),
                                         ),
 
                                       // Subtle Gradient Scrim
                                       Container(
-                                        height: 102,
+                                        height: 124,
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
                                             begin: Alignment.topCenter,
@@ -889,7 +915,7 @@ class _PosScreenState extends State<PosScreen> {
                                   // Dish Content
                                   Expanded(
                                     child: Padding(
-                                      padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                                      padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -18,6 +18,8 @@ class SalesReportScreen extends StatefulWidget {
 }
 
 class _SalesReportScreenState extends State<SalesReportScreen> {
+  final ScrollController _scrollController = ScrollController();
+  double _scrollOffset = 0.0;
   ReportPeriodType _periodType = ReportPeriodType.monthly;
   String _selectedPeriod = 'October 2026';
   bool _isGeneratingPdf = false;
@@ -27,6 +29,24 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
     ReportPeriodType.quarterly: ['Q3 2026 (Jul - Sep)', 'Q2 2026 (Apr - Jun)', 'Q1 2026 (Jan - Mar)', 'Q4 2025 (Oct - Dec)'],
     ReportPeriodType.yearly: ['FY 2026-27 (Current)', 'FY 2025-26 (Audited)', 'FY 2024-25'],
   };
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(() {
+      if (mounted) {
+        setState(() {
+          _scrollOffset = _scrollController.offset;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   void _onPeriodTypeChanged(ReportPeriodType type) {
     setState(() {
@@ -88,13 +108,34 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
       'Desserts & Sweets': grossSales * 0.06,
     };
 
+    final double scrollProgress = (_scrollOffset / 80.0).clamp(0.0, 1.0);
+    final appBarBg = Color.lerp(
+      theme.colorScheme.surface,
+      CulinaryColors.flameOrange,
+      scrollProgress,
+    );
+    final appBarFg = Color.lerp(
+      theme.colorScheme.onSurface,
+      Colors.white,
+      scrollProgress,
+    );
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sales & GST Reports'),
+        title: Text(
+          'Sales & GST Reports',
+          style: TextStyle(
+            color: appBarFg,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         centerTitle: false,
+        backgroundColor: appBarBg,
+        foregroundColor: appBarFg,
+        elevation: scrollProgress * 4.0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.share_rounded),
+            icon: Icon(Icons.share_rounded, color: appBarFg),
             tooltip: 'Export & Share PDF',
             onPressed: () => _exportPdf(
               pos: pos,
@@ -113,6 +154,7 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
         ],
       ),
       body: ListView(
+        controller: _scrollController,
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
         children: [
           // Header Card with GST & FSSAI Details
