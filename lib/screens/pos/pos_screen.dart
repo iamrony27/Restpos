@@ -734,121 +734,120 @@ class _PosScreenState extends State<PosScreen> {
                         final item = dishes[index];
                         final cartLine = posProvider.cart.where((l) => l.item.id == item.id).firstOrNull;
 
-                        return BouncingButton(
-                          onPressed: () {
-                            if (item.isAvailable) {
-                              posProvider.addToCart(item);
-                              NativeApiChannel.triggerNativeHaptic();
-                            } else {
-                              NativeApiChannel.triggerNativeHaptic();
-                              showModalBottomSheet(
-                                context: context,
-                                shape: const RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                                ),
-                                builder: (ctx) => SafeArea(
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            DietaryBadge(type: item.dietaryType, size: 16),
-                                            const SizedBox(width: 10),
-                                            Expanded(
-                                              child: Text(
-                                                item.name,
-                                                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-                                              ),
-                                            ),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                              decoration: BoxDecoration(
-                                                color: Colors.red.shade100,
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: Text(
-                                                'Out of Stock',
-                                                style: TextStyle(
-                                                  color: Colors.red.shade900,
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.w800,
+                        return Card(
+                          clipBehavior: Clip.antiAlias,
+                          elevation: cartLine != null ? 3 : 1,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(
+                              color: cartLine != null
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.outlineVariant.withOpacity(0.5),
+                              width: cartLine != null ? 1.5 : 1,
+                            ),
+                          ),
+                          color: !item.isAvailable
+                              ? theme.colorScheme.surfaceContainerHigh.withOpacity(0.55)
+                              : theme.colorScheme.surface,
+                          child: InkWell(
+                            onTap: () {
+                              if (item.isAvailable) {
+                                posProvider.addToCart(item);
+                                NativeApiChannel.triggerNativeHaptic();
+                              } else {
+                                NativeApiChannel.triggerNativeHaptic();
+                                showModalBottomSheet(
+                                  context: context,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                                  ),
+                                  builder: (ctx) => SafeArea(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              DietaryBadge(type: item.dietaryType, size: 16),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Text(
+                                                  item.name,
+                                                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
                                                 ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 14),
-                                        const Text(
-                                          'This item is currently deactivated. Would you like to reactivate it or edit details?',
-                                          style: TextStyle(fontSize: 13, color: Colors.grey),
-                                        ),
-                                        const SizedBox(height: 18),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: OutlinedButton.icon(
-                                                icon: const Icon(Icons.edit_rounded, size: 18),
-                                                label: const Text('Edit Dish'),
-                                                onPressed: () {
-                                                  Navigator.pop(ctx);
-                                                  _showAddEditDishDialog(context, item);
-                                                },
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: ElevatedButton.icon(
-                                                icon: const Icon(Icons.check_circle_rounded, size: 18),
-                                                label: const Text('Activate Dish'),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: CulinaryColors.emeraldGreen,
-                                                  foregroundColor: Colors.white,
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.red.shade100,
+                                                  borderRadius: BorderRadius.circular(6),
                                                 ),
-                                                onPressed: () {
-                                                  Navigator.pop(ctx);
-                                                  menuProvider.setItemAvailability(item.id, true);
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text('✓ ${item.name} is now Available / In Stock'),
-                                                      backgroundColor: CulinaryColors.emeraldGreen,
-                                                      duration: const Duration(seconds: 2),
-                                                    ),
-                                                  );
-                                                },
+                                                child: Text(
+                                                  'Out of Stock',
+                                                  style: TextStyle(
+                                                    color: Colors.red.shade900,
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w800,
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
+                                            ],
+                                          ),
+                                          const SizedBox(height: 14),
+                                          const Text(
+                                            'This item is currently deactivated. Would you like to reactivate it or edit details?',
+                                            style: TextStyle(fontSize: 13, color: Colors.grey),
+                                          ),
+                                          const SizedBox(height: 18),
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: OutlinedButton.icon(
+                                                  icon: const Icon(Icons.edit_rounded, size: 18),
+                                                  label: const Text('Edit Dish'),
+                                                  onPressed: () {
+                                                    Navigator.pop(ctx);
+                                                    _showAddEditDishDialog(context, item);
+                                                  },
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: ElevatedButton.icon(
+                                                  icon: const Icon(Icons.check_circle_rounded, size: 18),
+                                                  label: const Text('Activate Dish'),
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: CulinaryColors.emeraldGreen,
+                                                    foregroundColor: Colors.white,
+                                                  ),
+                                                  onPressed: () {
+                                                    Navigator.pop(ctx);
+                                                    menuProvider.setItemAvailability(item.id, true);
+                                                    ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text('✓ ${item.name} is now Available / In Stock'),
+                                                        backgroundColor: CulinaryColors.emeraldGreen,
+                                                        duration: const Duration(seconds: 2),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                              );
-                            }
-                          },
-                          child: GestureDetector(
+                                );
+                              }
+                            },
                             onLongPress: () => _showAddEditDishDialog(context, item),
-                            child: Card(
-                              clipBehavior: Clip.antiAlias,
-                              elevation: cartLine != null ? 3 : 1,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                side: BorderSide(
-                                  color: cartLine != null
-                                      ? theme.colorScheme.primary
-                                      : theme.colorScheme.outlineVariant.withOpacity(0.5),
-                                  width: cartLine != null ? 1.5 : 1,
-                                ),
-                              ),
-                              color: !item.isAvailable
-                                  ? theme.colorScheme.surfaceContainerHigh.withOpacity(0.55)
-                                  : theme.colorScheme.surface,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                                   // Food Photo with Badges & 3-Dot Actions Overlay
                                   Stack(
                                     children: [
@@ -1145,9 +1144,8 @@ class _PosScreenState extends State<PosScreen> {
                                 ],
                               ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
                     ),
                   ),
           ),
