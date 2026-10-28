@@ -6,7 +6,7 @@ import 'providers/menu_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/pos_provider.dart';
 import 'providers/table_provider.dart';
-import 'screens/home_shell_screen.dart';
+import 'screens/splash/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,12 +50,12 @@ class _RestaurantPosAppState extends State<RestaurantPosApp> {
         ChangeNotifierProvider(create: (_) => PosProvider()),
       ],
       child: MaterialApp(
-        title: 'Spice Garden POS',
+        title: 'Rest POS',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
-        home: HomeShellScreen(
+        home: SplashScreen(
           onToggleTheme: _toggleTheme,
           isDarkMode: _isDarkMode,
         ),

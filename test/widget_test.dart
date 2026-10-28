@@ -193,8 +193,7 @@ void main() {
     addTearDown(() => tester.view.resetPhysicalSize());
 
     await tester.pumpWidget(const RestaurantPosApp());
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
 
     final addIcon = find.byIcon(Icons.add_rounded);
     expect(addIcon, findsOneWidget);
