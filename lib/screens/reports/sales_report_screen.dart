@@ -5,6 +5,8 @@ import '../../core/animations/bouncing_button.dart';
 import '../../core/channels/native_api_channel.dart';
 import '../../core/theme/color_schemes.dart';
 import '../../core/utils/app_notification.dart';
+import '../../models/order_model.dart';
+import '../../providers/menu_provider.dart';
 import '../../providers/order_provider.dart';
 import '../../providers/pos_provider.dart';
 import '../../services/report_pdf_service.dart';
@@ -22,18 +24,41 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
   final ScrollController _scrollController = ScrollController();
   double _scrollOffset = 0.0;
   ReportPeriodType _periodType = ReportPeriodType.monthly;
-  String _selectedPeriod = 'October 2026';
+  late String _selectedPeriod;
   bool _isGeneratingPdf = false;
-
-  final Map<ReportPeriodType, List<String>> _periodOptions = {
-    ReportPeriodType.monthly: ['October 2026', 'September 2026', 'August 2026', 'July 2026'],
-    ReportPeriodType.quarterly: ['Q3 2026 (Jul - Sep)', 'Q2 2026 (Apr - Jun)', 'Q1 2026 (Jan - Mar)', 'Q4 2025 (Oct - Dec)'],
-    ReportPeriodType.yearly: ['FY 2026-27 (Current)', 'FY 2025-26 (Audited)', 'FY 2024-25'],
-  };
+  late Map<ReportPeriodType, List<String>> _periodOptions;
 
   @override
   void initState() {
     super.initState();
+    final now = DateTime.now();
+    final curMonth = DateFormat('MMMM yyyy').format(now);
+    final prevMonth1 = DateFormat('MMMM yyyy').format(DateTime(now.year, now.month - 1, 1));
+    final prevMonth2 = DateFormat('MMMM yyyy').format(DateTime(now.year, now.month - 2, 1));
+    final curQuarter = ((now.month - 1) ~/ 3) + 1;
+    final prevQuarter = curQuarter == 1 ? 4 : curQuarter - 1;
+    final prevQuarterYear = curQuarter == 1 ? now.year - 1 : now.year;
+    final curFyStart = now.month >= 4 ? now.year : now.year - 1;
+
+    _periodOptions = {
+      ReportPeriodType.monthly: [
+        curMonth,
+        'All Orders (Lifetime)',
+        'Today',
+        prevMonth1,
+        prevMonth2,
+      ],
+      ReportPeriodType.quarterly: [
+        'Q$curQuarter ${now.year} (Current)',
+        'Q$prevQuarter $prevQuarterYear (Previous)',
+      ],
+      ReportPeriodType.yearly: [
+        'FY $curFyStart-${(curFyStart + 1).toString().substring(2)} (Current)',
+        'All Time (Complete History)',
+      ],
+    };
+    _selectedPeriod = curMonth;
+
     _scrollController.addListener(() {
       if (mounted) {
         setState(() {
@@ -61,53 +86,89 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
     final theme = Theme.of(context);
     final pos = context.watch<PosProvider>();
     final orderProvider = context.watch<OrderProvider>();
+    final menuProvider = context.watch<MenuProvider>();
     final profile = pos.profile;
     final currencyFormatter = NumberFormat.currency(symbol: '₹', decimalDigits: 2);
 
-    // Compute dynamic aggregate figures based on live orders + baseline period multiplier
-    final liveOrders = orderProvider.orders;
-    final multiplier = _periodType == ReportPeriodType.yearly
-        ? 36.0
-        : (_periodType == ReportPeriodType.quarterly ? 9.0 : 1.0);
+    // Compute genuine aggregate figures directly from active/completed orders
+    final allOrders = orderProvider.orders.where((o) => !o.isDeleted && o.status != OrderStatus.cancelled).toList();
 
-    final baseGross = liveOrders.fold(0, (sum, o) => sum + o.subtotalPaise) / 100.0;
-    final grossSales = (baseGross > 0 ? baseGross : 42500.0) * multiplier;
-    final orderCount = (liveOrders.isNotEmpty ? liveOrders.length * 30 : 185 * multiplier.toInt());
-
-    final gstRate = profile.isGstEnabled ? profile.gstRatePercent : 0.0;
-    final bool isInclusive = profile.isTaxInclusive;
-
-    final double taxableBase;
-    final double totalGst;
-    if (!profile.isGstEnabled || gstRate == 0) {
-      taxableBase = grossSales;
-      totalGst = 0.0;
-    } else if (isInclusive) {
-      taxableBase = (grossSales * 100.0) / (100.0 + gstRate);
-      totalGst = grossSales - taxableBase;
+    List<Order> filteredOrders;
+    if (_selectedPeriod.contains('All Orders') || _selectedPeriod.contains('All Time')) {
+      filteredOrders = allOrders;
+    } else if (_selectedPeriod == 'Today') {
+      final now = DateTime.now();
+      filteredOrders = allOrders.where((o) =>
+          o.createdAt.year == now.year &&
+          o.createdAt.month == now.month &&
+          o.createdAt.day == now.day).toList();
+    } else if (_periodType == ReportPeriodType.monthly) {
+      filteredOrders = allOrders.where((o) =>
+          DateFormat('MMMM yyyy').format(o.createdAt) == _selectedPeriod).toList();
+    } else if (_periodType == ReportPeriodType.quarterly) {
+      filteredOrders = allOrders.where((o) {
+        final q = ((o.createdAt.month - 1) ~/ 3) + 1;
+        return _selectedPeriod.contains('Q$q ${o.createdAt.year}');
+      }).toList();
     } else {
-      taxableBase = grossSales;
-      totalGst = grossSales * (gstRate / 100.0);
+      // Yearly (Indian Financial Year: 1 Apr - 31 Mar)
+      final now = DateTime.now();
+      final fyStartYear = now.month >= 4 ? now.year : now.year - 1;
+      final fyStart = DateTime(fyStartYear, 4, 1);
+      final fyEnd = DateTime(fyStartYear + 1, 3, 31, 23, 59, 59);
+      if (_selectedPeriod.contains('Current')) {
+        filteredOrders = allOrders.where((o) =>
+            o.createdAt.isAfter(fyStart.subtract(const Duration(seconds: 1))) &&
+            o.createdAt.isBefore(fyEnd)).toList();
+      } else {
+        filteredOrders = allOrders;
+      }
     }
 
-    final double cgst = totalGst / 2.0;
-    final double sgst = totalGst / 2.0;
-    final double roundOff = _periodType == ReportPeriodType.monthly ? 14.50 : 85.20 * multiplier;
-    final double netRevenue = isInclusive ? grossSales : (taxableBase + totalGst + roundOff);
+    final int orderCount = filteredOrders.length;
+    final double grossSales = filteredOrders.fold(0, (sum, o) => sum + o.subtotalPaise) / 100.0;
+    final double taxableBase = filteredOrders.fold(0, (sum, o) => sum + o.taxableBasePaise) / 100.0;
+    final double totalGst = filteredOrders.fold(0, (sum, o) => sum + o.taxPaise) / 100.0;
+    final double cgst = filteredOrders.fold(0.0, (sum, o) => sum + o.cgstRupees);
+    final double sgst = filteredOrders.fold(0.0, (sum, o) => sum + o.sgstRupees);
+    final double roundOff = filteredOrders.fold(0, (sum, o) => sum + o.roundOffPaise) / 100.0;
+    final double netRevenue = filteredOrders.fold(0, (sum, o) => sum + o.totalPaise) / 100.0;
 
-    final paymentBreakdown = {
-      'UPI (Bharat QR / GPay)': grossSales * 0.58,
-      'Cash Tender': grossSales * 0.28,
-      'Debit / Credit Cards': grossSales * 0.14,
-    };
+    final Map<String, double> paymentBreakdown = {};
+    for (final o in filteredOrders) {
+      final method = o.paymentMethod ?? PaymentMethod.cash;
+      final String label;
+      switch (method) {
+        case PaymentMethod.upi:
+          label = 'UPI (Bharat QR / GPay)';
+          break;
+        case PaymentMethod.card:
+          label = 'Debit / Credit Cards';
+          break;
+        case PaymentMethod.cash:
+          label = 'Cash Tender';
+          break;
+        case PaymentMethod.credit:
+          label = 'Customer Credit (Khata)';
+          break;
+      }
+      paymentBreakdown[label] = (paymentBreakdown[label] ?? 0.0) + o.totalRupees;
+    }
+    if (paymentBreakdown.isEmpty) {
+      paymentBreakdown['Cash Tender'] = 0.0;
+    }
 
-    final categoryBreakdown = {
-      'Main Course & Curries': grossSales * 0.42,
-      'Tandoori Breads & Rice': grossSales * 0.26,
-      'Appetizers & Starters': grossSales * 0.18,
-      'Beverages & Shakes': grossSales * 0.08,
-      'Desserts & Sweets': grossSales * 0.06,
-    };
+    final Map<String, double> categoryBreakdown = {};
+    for (final o in filteredOrders) {
+      for (final item in o.items) {
+        final cat = menuProvider.categories.where((c) => c.id == item.menuItem.categoryId).firstOrNull;
+        final catName = cat?.name ?? 'Main Course';
+        categoryBreakdown[catName] = (categoryBreakdown[catName] ?? 0.0) + item.lineTotalRupees;
+      }
+    }
+    if (categoryBreakdown.isEmpty) {
+      categoryBreakdown['All Categories'] = 0.0;
+    }
 
     final double scrollProgress = (_scrollOffset / 80.0).clamp(0.0, 1.0);
     final appBarBg = Color.lerp(
@@ -230,7 +291,7 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        isInclusive ? 'Tax Mode: Inclusive (Tax in Price)' : 'Tax Mode: Exclusive (Tax Added)',
+                        profile.isTaxInclusive ? 'Tax Mode: Inclusive (Tax in Price)' : 'Tax Mode: Exclusive (Tax Added)',
                         style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
                       ),
                     ),

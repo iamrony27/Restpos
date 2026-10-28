@@ -1145,6 +1145,21 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
                       ),
                     ],
                   ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFDC2626),
+                        side: BorderSide(color: const Color(0xFFDC2626).withOpacity(0.4)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.delete_sweep_rounded, size: 18),
+                      label: const Text('Clear Orders (Reset for Production)', style: TextStyle(fontWeight: FontWeight.w600)),
+                      onPressed: () => _handleClearOrdersFlow(context),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -1450,6 +1465,48 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
           duration: const Duration(seconds: 4),
         );
       }
+    }
+  }
+
+  Future<void> _handleClearOrdersFlow(BuildContext context) async {
+    NativeApiChannel.triggerNativeHaptic();
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626)),
+            SizedBox(width: 10),
+            Expanded(child: Text('Reset for Production?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+          ],
+        ),
+        content: const Text(
+          'This will clear all demo/test orders and reset table statuses so you start fresh for live operations. Menu catalog and restaurant profile will remain untouched.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Yes, Reset Orders'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && context.mounted) {
+      final orderProv = context.read<OrderProvider>();
+      final tableProv = context.read<TableProvider>();
+      orderProv.clearAllOrders(tableProvider: tableProv);
+      AppNotification.showSuccess(
+        context,
+        'All orders cleared. Tables reset to available. Ready for production billing!',
+        title: 'Production Ready',
+      );
     }
   }
 

@@ -8,8 +8,14 @@ import 'providers/pos_provider.dart';
 import 'providers/table_provider.dart';
 import 'screens/splash/splash_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Strictly lock orientation to portrait for optimal Android phone usage
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
   // Edge to edge Android system UI styling
   SystemChrome.setSystemUIOverlayStyle(

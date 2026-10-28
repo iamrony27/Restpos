@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/menu_item.dart';
 import '../models/order_model.dart';
+import '../models/table_model.dart';
 import 'table_provider.dart';
 
 class OrderProvider extends ChangeNotifier {
@@ -271,6 +272,18 @@ class OrderProvider extends ChangeNotifier {
   void replaceAllOrders(List<Order> newOrders) {
     _orders.clear();
     _orders.addAll(newOrders);
+    notifyListeners();
+  }
+
+  void clearAllOrders({TableProvider? tableProvider}) {
+    _orders.clear();
+    if (tableProvider != null) {
+      for (final table in tableProvider.tables) {
+        if (table.status != TableStatus.available) {
+          tableProvider.freeTable(table.id);
+        }
+      }
+    }
     notifyListeners();
   }
 }

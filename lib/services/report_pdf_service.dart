@@ -145,7 +145,7 @@ class ReportPdfService {
                 pw.TableRow(children: [
                   _cell('Total Completed Invoices / Bills'),
                   _cell('$totalOrders Orders'),
-                  _cell(totalOrders.toString(), align: pw.TextAlign.right),
+                  _cell('-', align: pw.TextAlign.right),
                 ]),
                 pw.TableRow(children: [
                   _cell('Gross Billed Volume (Total Sales)'),

@@ -289,6 +289,12 @@ void main() {
     orderProvider.restoreOrder(orderId);
     expect(orderProvider.orders.any((o) => o.id == orderId), isTrue);
     expect(orderProvider.deletedOrders.any((o) => o.id == orderId), isFalse);
+
+    // 4. Test Production Reset / Clear All Orders
+    orderProvider.clearAllOrders(tableProvider: tableProvider);
+    expect(orderProvider.orders.isEmpty, isTrue);
+    expect(tableProvider.occupiedCount, equals(0));
+    expect(tableProvider.billedCount, equals(0));
   });
 }
 
