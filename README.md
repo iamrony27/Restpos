@@ -6,6 +6,10 @@
 [![Android](https://img.shields.io/badge/Platform-Android%20%7C%20Linux%20%7C%20Web-3DDC84?logo=android&logoColor=white)](https://android.com)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
+<br/>
+
+[![Get it on Orion Store](https://raw.githubusercontent.com/RookieEnough/Orion-Store/refs/heads/main/assets/orion-badge.png)](https://rookieenough.github.io/Orion-Data/app/?id=rest-pos)
+
 A high-performance, **100% offline-first restaurant management and Point-of-Sale (POS)** application crafted with **Flutter**, **Dart**, and **Google Material 3 design**. Features buttery 60/120fps animations, tactile haptic feedback, real-time table floor plans with dining timers, dynamic UPI QR code payments, ESC/POS thermal printing hooks, and direct **native Android platform API integration**.
 
 Designed for cafes, dine-in restaurants, quick-service eateries (QSR), cloud kitchens, and food trucks.
