@@ -12,27 +12,40 @@ Designed for cafes, dine-in restaurants, quick-service eateries (QSR), cloud kit
 
 ---
 
+## 📱 App Screenshots Showcase
+
+![Rest POS App Showcase Panorama](app_screenshots/playstore_showcase/showcase_panorama_5in1.png)
+
+<p align="center">
+  <img src="app_screenshots/playstore_showcase/01_live_dashboard.png" width="19%" alt="Dashboard" />
+  <img src="app_screenshots/playstore_showcase/02_menu_catalog.png" width="19%" alt="Menu Catalog" />
+  <img src="app_screenshots/playstore_showcase/03_touchscreen_grid.png" width="19%" alt="POS Touchscreen" />
+  <img src="app_screenshots/playstore_showcase/04_statutory_gst.png" width="19%" alt="Statutory GST Reports" />
+  <img src="app_screenshots/playstore_showcase/05_hardware_settings.png" width="19%" alt="Hardware Settings" />
+</p>
+
+---
+
 ## 🌟 Architecture & System Overview
 
 ```mermaid
 graph TD
-    A[Spice Garden Mobile & Terminal UI] --> B[Executive Dashboard & Sales Analytics]
-    A --> C[POS Billing & Cart Engine]
-    A --> D[Floor Plan & Table Management]
-    A --> E[Orders & Kitchen Tickets (KOT)]
-    A --> F[Native Android API Channel]
+    A["Rest POS Mobile Terminal UI"] --> B["Executive Dashboard & Sales Analytics"]
+    A --> C["POS Billing & Cart Engine"]
+    A --> D["Floor Plan & Table Management"]
+    A --> E["Orders & Kitchen Tickets (KOT)"]
+    A --> F["Native Android API Channel"]
 
-    C --> G[Dynamic UPI QR Code Generator]
-    C --> H[Cash Tender & Change Calculator]
-    C --> I[GST / Tax Engine]
+    C --> G["Dynamic UPI QR Code Generator"]
+    C --> H["Cash Tender & Change Calculator"]
+    C --> I["GST / Tax Engine"]
 
-    D --> J[Color-Coded Statuses: Available / Occupied / Billed]
-    D --> K[Live Elapsed Dining Time Counters]
+    D --> J["Color-Coded Statuses: Available / Occupied / Billed"]
+    D --> K["Live Elapsed Dining Time Counters"]
 
-    F --> L[Android BatteryManager & Hardware ID]
-    F --> M[Native Vibrator Tactile Haptics]
-    F --> N[ESC/POS Bluetooth Thermal Printing]
-    F --> O[Wireless Wi-Fi Settings Intent]
+    F --> L["Android BatteryManager & Hardware ID"]
+    F --> M["Native Vibrator Tactile Haptics"]
+    F --> N["ESC/POS Bluetooth Thermal Printing"]
 ```
 
 ---
@@ -111,56 +124,9 @@ Built-in `MethodChannel` (`com.restaurantpos.app/native_channel`) in `MainActivi
 - `getDeviceInfo`: Device model, manufacturer, Android OS version, and hardware ID.
 - `getBatteryInfo`: Android `BatteryManager` percentage and charging detection.
 - `triggerHaptic`: Android `Vibrator` / `VibratorManager` tactile effects.
-- `openWifiSettings`: Direct shortcut to Android Wi-Fi settings for wireless debugging.
 - `printReceipt`: Native ESC/POS thermal printing socket dispatch.
-
----
-
-## 📲 How to View the UI on Your Phone (Wi-Fi Debugging)
-
-You can build and preview this app live on your physical Android phone with **sub-second Hot Reload** over Wi-Fi without needing a USB cable!
-
-### Prerequisites:
-- Your phone and development PC must be on the **same Wi-Fi network**.
-- Android 11 or higher.
-
-### Step-by-Step Connection Guide:
-
-#### Step 1: Enable Wireless Debugging on Phone
-1. On your phone, go to **Settings** ➔ **About Phone** ➔ Tap **Build Number** 7 times to enable Developer Options.
-2. Go to **Settings** ➔ **Developer Options** ➔ Toggle **Wireless debugging** to **ON**.
-3. Tap on **"Wireless debugging"** (the text itself) to enter its detailed settings page.
-
-#### Step 2: Pair Device with Your PC (First Time Only)
-1. In the Wireless debugging screen, tap **"Pair device with pairing code"**.
-2. Note down the **Wi-Fi pairing code** (6 digits) and the **IP address & Port** (e.g., `192.168.0.105:37851`).
-3. On your PC terminal, run:
-   ```bash
-   adb pair 192.168.0.105:37851
-   ```
-4. Enter the 6-digit code when prompted. You will see `Successfully paired to 192.168.0.105:37851`.
-
-#### Step 3: Connect ADB over Wi-Fi
-1. Back on the main Wireless debugging screen, look at the **IP address & Port** listed under "IP address & Port" (e.g., `192.168.0.105:41235`).
-2. Run:
-   ```bash
-   adb connect 192.168.0.105:41235
-   ```
-3. Verify connection:
-   ```bash
-   adb devices
-   # Output:
-   # 192.168.0.105:41235    device
-   ```
-
-#### Step 4: Run Flutter with Live Hot Reload!
-```bash
-cd "flutter_restaurant_pos"
-flutter run
-```
-Flutter will detect your wireless phone and launch the app.
-- Press **`r`** in the terminal to **Hot Reload** instantly (changes reflect in <0.5s!).
-- Press **`R`** to **Hot Restart**.
+- `connectBluetoothPrinter` & `getPairedPrinters`: Direct Bluetooth thermal printer pairing and wireless ticket dispatch.
+- `saveBackupToRestPos` & `readBackupFromRestPos`: Android MediaStore scoped-storage backup and restore.
 
 ---
 
@@ -237,12 +203,14 @@ flutter_restaurant_pos/
 │   │   ├── orders/
 │   │   │   └── orders_screen.dart         # Orders list, KOT print, receipt reprint
 │   │   └── settings/
-│   │       ├── settings_screen.dart       # Hardware, printing & native API inspector
-│   │       └── wifi_debugging_guide_screen.dart # Interactive Wi-Fi debugging guide
+│   │       └── settings_screen.dart       # Hardware, thermal printing & settings
 │   └── widgets/
 │       ├── animated_stat_card.dart        # Dashboard metric cards
 │       ├── dietary_badge.dart             # Veg/Non-Veg/Egg emblems
 │       └── upi_qr_widget.dart             # Live QR code renderer
+├── app_screenshots/
+│   ├── playstore_showcase/                # High-res marketing panorama & showcase cards
+│   └── raw/                               # Raw full-device captures
 ├── android/
 │   └── app/src/main/kotlin/com/restaurantpos/flutter_restaurant_pos/
 │       └── MainActivity.kt                # Native Android MethodChannel handlers
