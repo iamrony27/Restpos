@@ -1,5 +1,7 @@
+import 'dart:ui';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/channels/native_api_channel.dart';
 import '../../core/theme/color_schemes.dart';
@@ -8,11 +10,10 @@ import '../../models/order_model.dart';
 import '../../providers/menu_provider.dart';
 import '../../providers/order_provider.dart';
 import '../../providers/pos_provider.dart';
-import '../../widgets/dietary_badge.dart';
 import '../reports/sales_report_screen.dart';
 import '../setup/setup_wizard_screen.dart';
 
-enum ChartMode { itemWise, amountWise }
+enum ChartMode { itemWise, amountWise, history }
 enum ItemsSoldInterval { today, weekly, monthly }
 
 class DashboardScreen extends StatefulWidget {
@@ -38,41 +39,81 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final profile = posProvider.profile;
 
     final totalRevenue = orderProvider.totalRevenueRupees;
-    final orderCount = orderProvider.orderCount;
+    final completedBills = orderProvider.completedOrders.length;
     final atv = orderProvider.averageTicketValueRupees;
     final bestsellers = menuProvider.topSellingItems;
 
     return Scaffold(
       appBar: AppBar(
-        titleSpacing: 16,
-        toolbarHeight: 74,
-        title: Column(
+        titleSpacing: 14,
+        toolbarHeight: 68,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        systemOverlayStyle: theme.brightness == Brightness.dark
+            ? const SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: Brightness.light,
+                statusBarBrightness: Brightness.dark,
+              )
+            : const SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: Brightness.dark,
+                statusBarBrightness: Brightness.light,
+              ),
+        flexibleSpace: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: Container(
+              decoration: BoxDecoration(
+                color: (theme.brightness == Brightness.dark
+                        ? const Color(0xFF1C1816)
+                        : const Color(0xFFFFFBF7))
+                    .withOpacity(0.82),
+                border: Border(
+                  bottom: BorderSide(
+                    color: (theme.brightness == Brightness.dark
+                            ? Colors.white.withOpacity(0.08)
+                            : CulinaryColors.flameOrange.withOpacity(0.18)),
+                    width: 1.2,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        title: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 220),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Full Restaurant Name (No truncation)
               Text(
                 profile.name,
-                style: theme.textTheme.titleLarge?.copyWith(
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w900,
                   color: CulinaryColors.tandoorOrange,
-                  fontSize: 20,
+                  fontSize: 18,
+                  letterSpacing: -0.3,
                 ),
               ),
-              const SizedBox(height: 2),
-              // Restaurant Tagline (Clean, FSSAI removed as requested)
+              const SizedBox(height: 1),
               Text(
                 profile.tagline,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.outline,
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
+        ),
         actions: [
-          // Dynamic Thermal Printer Connect Status Badge
+          // Dynamic Thermal Printer Connect Status Badge (More Compact)
           GestureDetector(
             onTap: () {
               NativeApiChannel.triggerNativeHaptic();
@@ -89,26 +130,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
               );
             },
             child: Container(
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              margin: const EdgeInsets.only(right: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
               decoration: BoxDecoration(
                 color: posProvider.isPrinterConnected
                     ? CulinaryColors.emeraldGreen.withOpacity(0.12)
-                    : theme.colorScheme.errorContainer.withOpacity(0.4),
-                borderRadius: BorderRadius.circular(12),
+                    : theme.colorScheme.errorContainer.withOpacity(0.35),
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: posProvider.isPrinterConnected
                       ? CulinaryColors.emeraldGreen
-                      : theme.colorScheme.error,
-                  width: 1,
+                      : theme.colorScheme.error.withOpacity(0.6),
+                  width: 0.8,
                 ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 7,
-                    height: 7,
+                    width: 6,
+                    height: 6,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: posProvider.isPrinterConnected
@@ -116,20 +157,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           : theme.colorScheme.error,
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 4),
                   Icon(
                     Icons.print_rounded,
-                    size: 15,
+                    size: 13,
                     color: posProvider.isPrinterConnected
                         ? CulinaryColors.emeraldGreen
                         : theme.colorScheme.error,
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 3),
                   Text(
-                    posProvider.isPrinterConnected ? '58mm Online' : 'Offline',
+                    posProvider.isPrinterConnected ? '58mm' : 'Offline',
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
-                      fontSize: 11,
+                      fontSize: 10,
                       color: posProvider.isPrinterConnected
                           ? CulinaryColors.emeraldGreen
                           : theme.colorScheme.error,
@@ -159,7 +200,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: const Icon(Icons.settings_outlined),
             onPressed: () {
               NativeApiChannel.triggerNativeHaptic();
-              widget.onNavigateTab(4);
+              widget.onNavigateTab(5);
             },
           ),
 
@@ -250,11 +291,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   theme: theme,
                   title: "Today's Gross Sales",
                   value: CurrencyFormatter.formatRupees(totalRevenue),
-                  subtitle: '+18.4% vs yesterday',
+                  subtitle: completedBills > 0 ? '$completedBills bills settled' : 'No sales recorded yet',
                   icon: Icons.currency_rupee_rounded,
                   color: CulinaryColors.emeraldGreen,
                   gradientColors: [const Color(0xFF059669), const Color(0xFF10B981)],
-                  onTap: () => widget.onNavigateTab(3),
+                  onTap: () => widget.onNavigateTab(4),
                 ),
               ),
               const SizedBox(width: 12),
@@ -262,12 +303,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: _buildVibrantStatCard(
                   theme: theme,
                   title: 'Completed Orders',
-                  value: '$orderCount Bills',
+                  value: '$completedBills Bills',
                   subtitle: '${orderProvider.activeOrders.length} active in kitchen',
                   icon: Icons.receipt_long_rounded,
                   color: CulinaryColors.flameOrange,
                   gradientColors: [const Color(0xFFEA580C), const Color(0xFFF97316)],
-                  onTap: () => widget.onNavigateTab(3),
+                  onTap: () => widget.onNavigateTab(4),
                 ),
               ),
             ],
@@ -282,7 +323,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   theme: theme,
                   title: 'Avg Order Value (ATV)',
                   value: CurrencyFormatter.formatRupees(atv),
-                  subtitle: 'High dining ticket',
+                  subtitle: completedBills > 0
+                      ? '₹${totalRevenue.toStringAsFixed(0)} ÷ $completedBills bills'
+                      : 'Waiting for orders',
                   icon: Icons.trending_up_rounded,
                   color: CulinaryColors.royalBlue,
                   gradientColors: [const Color(0xFF0284C7), const Color(0xFF38BDF8)],
@@ -299,188 +342,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
 
-          const SizedBox(height: 24),
-
-          // Top Selling Dishes Horizontal Carousel
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Text('🔥', style: TextStyle(fontSize: 18)),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Top Selling Items',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 17,
-                    ),
-                  ),
-                ],
-              ),
-              TextButton(
-                onPressed: () {
-                  posProvider.selectCategory(-1); // Switch to Bestsellers
-                  widget.onNavigateTab(1); // Go to POS
-                },
-                child: const Text('View All'),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 10),
-
-          SizedBox(
-            height: 200,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: bestsellers.length,
-              itemBuilder: (context, index) {
-                final item = bestsellers[index];
-                final rank = index + 1;
-
-                Color rankColor;
-                if (rank == 1) {
-                  rankColor = const Color(0xFFEAB308); // Gold
-                } else if (rank == 2) {
-                  rankColor = const Color(0xFF94A3B8); // Silver
-                } else if (rank == 3) {
-                  rankColor = const Color(0xFFD97706); // Bronze
-                } else {
-                  rankColor = CulinaryColors.tandoorOrange;
-                }
-
-                return Container(
-                  width: 156,
-                  margin: const EdgeInsets.only(right: 12),
-                  child: Card(
-                    clipBehavior: Clip.antiAlias,
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: InkWell(
-                      onTap: () {
-                        posProvider.addToCart(item);
-                        NativeApiChannel.triggerNativeHaptic();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('${item.name} added to cart!'),
-                            duration: const Duration(milliseconds: 1200),
-                            action: SnackBarAction(
-                              label: 'View Cart',
-                              onPressed: () => widget.onNavigateTab(1),
-                            ),
-                          ),
-                        );
-                      },
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Stack(
-                            children: [
-                              if (item.imageUri != null)
-                                Image.asset(
-                                  item.imageUri!,
-                                  height: 96,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
-                                    height: 96,
-                                    color: theme.colorScheme.surfaceContainerHighest,
-                                    child: const Icon(Icons.restaurant_rounded),
-                                  ),
-                                )
-                              else
-                                Container(
-                                  height: 96,
-                                  color: theme.colorScheme.surfaceContainerHighest,
-                                  child: const Icon(Icons.restaurant_rounded),
-                                ),
-                              Positioned(
-                                top: 6,
-                                left: 6,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: rankColor,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    '#$rank',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                top: 6,
-                                right: 6,
-                                child: Container(
-                                  padding: const EdgeInsets.all(2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: DietaryBadge(type: item.dietaryType, size: 10),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.all(8),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    item.name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        item.formattedPrice,
-                                        style: const TextStyle(
-                                          color: CulinaryColors.tandoorOrange,
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.all(3),
-                                        decoration: BoxDecoration(
-                                          color: CulinaryColors.tandoorOrange.withOpacity(0.12),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Icon(Icons.add_rounded, size: 14, color: CulinaryColors.tandoorOrange),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
           // Payment Channel Breakdown Card
           Card(
@@ -534,34 +396,105 @@ class _DashboardScreenState extends State<DashboardScreen> {
     OrderProvider orderProvider,
     List<dynamic> bestsellers,
   ) {
-    // 5 completely distinct, vibrant colors for each dish
+    // 5 completely distinct, vibrant colors for each dish segment
     final colors = [
-      const Color(0xFFEA580C), // Vivid Tandoor Orange (Butter Chicken)
-      const Color(0xFF0284C7), // Royal Azure Blue (Chicken Biryani)
-      const Color(0xFF10B981), // Emerald Green (Paneer Butter)
-      const Color(0xFF8B5CF6), // Amethyst Violet (Butter Naan)
-      const Color(0xFFF59E0B), // Warm Amber Gold (Others & Drinks)
+      const Color(0xFFEA580C), // Vivid Tandoor Orange
+      const Color(0xFF0284C7), // Royal Azure Blue
+      const Color(0xFF10B981), // Emerald Green
+      const Color(0xFF8B5CF6), // Amethyst Violet
+      const Color(0xFFF59E0B), // Warm Amber Gold
     ];
 
     final isItemWise = _chartMode == ChartMode.itemWise;
+    final isHistory = _chartMode == ChartMode.history;
 
-    final List<Map<String, dynamic>> chartData = isItemWise
-        ? [
-            {'label': 'Chicken Biryani', 'value': 198.0, 'color': colors[0]},
-            {'label': 'Butter Naan', 'value': 189.0, 'color': colors[1]},
-            {'label': 'Butter Chicken', 'value': 165.0, 'color': colors[2]},
-            {'label': 'Masala Chai', 'value': 142.0, 'color': colors[3]},
-            {'label': 'Paneer Tikka', 'value': 118.0, 'color': colors[4]},
-          ]
-        : [
-            {'label': 'Butter Chicken', 'value': 62700.0, 'color': colors[0]},
-            {'label': 'Chicken Biryani', 'value': 67320.0, 'color': colors[1]},
-            {'label': 'Paneer Butter', 'value': 41850.0, 'color': colors[2]},
-            {'label': 'Butter Naan', 'value': 10395.0, 'color': colors[3]},
-            {'label': 'Others & Drinks', 'value': 18500.0, 'color': colors[4]},
-          ];
+    // Aggregate real dynamic data directly from all completed/paid orders
+    final Map<String, int> dishQuantities = {};
+    final Map<String, double> dishRevenue = {};
+
+    for (final order in orderProvider.orders) {
+      if (order.status == OrderStatus.cancelled) continue;
+      for (final item in order.items) {
+        final name = item.menuItem.name;
+        dishQuantities[name] = (dishQuantities[name] ?? 0) + item.quantity;
+        dishRevenue[name] = (dishRevenue[name] ?? 0.0) + item.lineTotalRupees;
+      }
+    }
+
+    final List<Map<String, dynamic>> chartData = [];
+
+    if (isItemWise) {
+      final sortedEntries = dishQuantities.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+      final top = sortedEntries.take(4).toList();
+      final restCount = sortedEntries.skip(4).fold<int>(0, (sum, e) => sum + e.value);
+
+      for (var i = 0; i < top.length; i++) {
+        chartData.add({
+          'label': top[i].key,
+          'value': top[i].value.toDouble(),
+          'color': colors[i % colors.length],
+        });
+      }
+      if (restCount > 0) {
+        chartData.add({
+          'label': 'Other Dishes',
+          'value': restCount.toDouble(),
+          'color': colors[top.length % colors.length],
+        });
+      }
+    } else if (!isHistory) {
+      final sortedEntries = dishRevenue.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+      final top = sortedEntries.take(4).toList();
+      final restRevenue = sortedEntries.skip(4).fold<double>(0.0, (sum, e) => sum + e.value);
+
+      for (var i = 0; i < top.length; i++) {
+        chartData.add({
+          'label': top[i].key,
+          'value': top[i].value,
+          'color': colors[i % colors.length],
+        });
+      }
+      if (restRevenue > 0) {
+        chartData.add({
+          'label': 'Other Dishes',
+          'value': restRevenue,
+          'color': colors[top.length % colors.length],
+        });
+      }
+    }
 
     final totalValue = chartData.fold<double>(0.0, (sum, d) => sum + (d['value'] as double));
+
+    // Daily turnover history calculations for 7 days
+    final now = DateTime.now();
+    const weekdayNames = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final List<Map<String, dynamic>> dailyHistory = [];
+    double maxDailyRevenue = 0.0;
+    double sevenDayRevenue = 0.0;
+    int sevenDayBills = 0;
+
+    for (int i = 6; i >= 0; i--) {
+      final day = DateTime(now.year, now.month, now.day).subtract(Duration(days: i));
+      final nextDay = day.add(const Duration(days: 1));
+
+      final dayOrders = orderProvider.completedOrders.where((o) =>
+          !o.createdAt.isBefore(day) && o.createdAt.isBefore(nextDay)).toList();
+
+      final dayRevenue = dayOrders.fold<double>(0.0, (sum, o) => sum + o.totalRupees);
+      if (dayRevenue > maxDailyRevenue) maxDailyRevenue = dayRevenue;
+      sevenDayRevenue += dayRevenue;
+      sevenDayBills += dayOrders.length;
+
+      dailyHistory.add({
+        'day': day,
+        'label': i == 0 ? 'Today' : weekdayNames[day.weekday],
+        'dateStr': '${day.day}/${day.month}',
+        'orders': dayOrders.length,
+        'revenue': dayRevenue,
+      });
+    }
 
     return Card(
       elevation: 2,
@@ -579,45 +512,58 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Sales Distribution',
+                        isHistory ? 'Sales History Trend' : 'Sales Distribution',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
                       ),
                       Text(
-                        isItemWise ? 'Quantity-wise item volume' : 'Revenue-wise turnover',
+                        isHistory
+                            ? 'Past 7 days turnover track'
+                            : (isItemWise ? 'Quantity-wise item volume' : 'Revenue-wise turnover'),
                         style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                SegmentedButton<ChartMode>(
-                  style: const ButtonStyle(
-                    visualDensity: VisualDensity.compact,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.all(2.5),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  segments: const [
-                    ButtonSegment(
-                      value: ChartMode.itemWise,
-                      label: Text('Qty'),
-                      icon: Icon(Icons.numbers_rounded, size: 14),
-                    ),
-                    ButtonSegment(
-                      value: ChartMode.amountWise,
-                      label: Text('₹ Amount'),
-                      icon: Icon(Icons.currency_rupee_rounded, size: 14),
-                    ),
-                  ],
-                  selected: {_chartMode},
-                  onSelectionChanged: (set) {
-                    setState(() => _chartMode = set.first);
-                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildChartModePill(
+                        theme: theme,
+                        mode: ChartMode.itemWise,
+                        icon: Icons.numbers_rounded,
+                        label: 'Qty',
+                      ),
+                      _buildChartModePill(
+                        theme: theme,
+                        mode: ChartMode.amountWise,
+                        icon: Icons.currency_rupee_rounded,
+                        label: 'Amount',
+                      ),
+                      _buildChartModePill(
+                        theme: theme,
+                        mode: ChartMode.history,
+                        icon: Icons.show_chart_rounded,
+                        label: 'Trend',
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            Row(
+            if (isHistory) ...[
+              _buildHistoryBarChart(theme, dailyHistory, maxDailyRevenue, sevenDayRevenue, sevenDayBills),
+            ] else ...[
+              Row(
               children: [
                 // Circular Donut Chart
                 SizedBox(
@@ -643,28 +589,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               });
                             },
                           ),
-                          sections: chartData.asMap().entries.map((entry) {
-                            final idx = entry.key;
-                            final data = entry.value;
-                            final isTouched = idx == _touchedChartIndex;
-                            final radius = isTouched ? 30.0 : 24.0;
-                            return PieChartSectionData(
-                              color: data['color'] as Color,
-                              value: data['value'] as double,
-                              title: '',
-                              radius: radius,
-                            );
-                          }).toList(),
+                          sections: chartData.isEmpty
+                              ? [
+                                  PieChartSectionData(
+                                    color: theme.colorScheme.outlineVariant.withOpacity(0.4),
+                                    value: 1,
+                                    title: '',
+                                    radius: 20.0,
+                                  ),
+                                ]
+                              : chartData.asMap().entries.map((entry) {
+                                  final idx = entry.key;
+                                  final data = entry.value;
+                                  final isTouched = idx == _touchedChartIndex;
+                                  final radius = isTouched ? 30.0 : 24.0;
+                                  return PieChartSectionData(
+                                    color: data['color'] as Color,
+                                    value: data['value'] as double,
+                                    title: '',
+                                    radius: radius,
+                                  );
+                                }).toList(),
                         ),
+                        swapAnimationDuration: const Duration(milliseconds: 400),
+                        swapAnimationCurve: Curves.easeInOutCubic,
                       ),
                       Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            isItemWise ? totalValue.toInt().toString() : '₹${(totalValue / 1000).toStringAsFixed(1)}k',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 16,
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 200),
+                            child: Text(
+                              chartData.isEmpty
+                                  ? '0'
+                                  : (isItemWise
+                                      ? totalValue.toInt().toString()
+                                      : '₹${(totalValue / 1000).toStringAsFixed(1)}k'),
+                              key: ValueKey<String>(chartData.isEmpty
+                                  ? '0'
+                                  : (isItemWise
+                                      ? totalValue.toInt().toString()
+                                      : '₹${(totalValue / 1000).toStringAsFixed(1)}k')),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 16,
+                              ),
                             ),
                           ),
                           Text(
@@ -685,8 +654,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: chartData.map((data) {
+                    children: chartData.isEmpty
+                        ? [
+                            Center(
+                              child: Text(
+                                'No orders placed yet.\nStart taking orders in POS!',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.outline,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                          ]
+                        : chartData.map((data) {
                       final pct = totalValue > 0 ? ((data['value'] as double) / totalValue * 100).toStringAsFixed(0) : '0';
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 3),
@@ -725,9 +705,239 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ],
             ),
+            ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildHistoryBarChart(
+    ThemeData theme,
+    List<Map<String, dynamic>> dailyHistory,
+    double maxDailyRevenue,
+    double sevenDayRevenue,
+    int sevenDayBills,
+  ) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: 170,
+          child: BarChart(
+            BarChartData(
+              alignment: BarChartAlignment.spaceAround,
+              maxY: maxDailyRevenue > 0 ? (maxDailyRevenue * 1.3) : 1000,
+              barTouchData: BarTouchData(
+                enabled: true,
+                touchTooltipData: BarTouchTooltipData(
+                  getTooltipColor: (_) => const Color(0xFF261D19),
+                  tooltipRoundedRadius: 8,
+                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                    final item = dailyHistory[group.x.toInt()];
+                    return BarTooltipItem(
+                      '${item['label']} (${item['dateStr']})\n',
+                      const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
+                      children: [
+                        TextSpan(
+                          text: '₹${(item['revenue'] as double).toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            color: CulinaryColors.flameOrange,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        TextSpan(
+                          text: ' • ${item['orders']} bills',
+                          style: const TextStyle(color: Colors.white60, fontSize: 10),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              titlesData: FlTitlesData(
+                show: true,
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    getTitlesWidget: (val, meta) {
+                      final idx = val.toInt();
+                      if (idx < 0 || idx >= dailyHistory.length) return const SizedBox.shrink();
+                      final item = dailyHistory[idx];
+                      final isToday = idx == dailyHistory.length - 1;
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 5),
+                        child: Text(
+                          item['label'] as String,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: isToday ? FontWeight.w900 : FontWeight.w600,
+                            color: isToday ? CulinaryColors.flameOrange : theme.colorScheme.outline,
+                          ),
+                        ),
+                      );
+                    },
+                    reservedSize: 22,
+                  ),
+                ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 38,
+                    getTitlesWidget: (val, meta) {
+                      if (val == 0) return const SizedBox.shrink();
+                      if (val >= 1000) {
+                        return Text(
+                          '₹${(val / 1000).toStringAsFixed(0)}k',
+                          style: TextStyle(fontSize: 9, color: theme.colorScheme.outline),
+                        );
+                      }
+                      return Text(
+                        '₹${val.toInt()}',
+                        style: TextStyle(fontSize: 9, color: theme.colorScheme.outline),
+                      );
+                    },
+                  ),
+                ),
+                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                getDrawingHorizontalLine: (val) => FlLine(
+                  color: theme.colorScheme.outlineVariant.withOpacity(0.25),
+                  strokeWidth: 0.8,
+                ),
+              ),
+              borderData: FlBorderData(show: false),
+              barGroups: dailyHistory.asMap().entries.map((entry) {
+                final idx = entry.key;
+                final item = entry.value;
+                final revenue = item['revenue'] as double;
+                final isToday = idx == dailyHistory.length - 1;
+
+                return BarChartGroupData(
+                  x: idx,
+                  barRods: [
+                    BarChartRodData(
+                      toY: revenue,
+                      gradient: LinearGradient(
+                        colors: isToday
+                            ? [CulinaryColors.flameOrange, CulinaryColors.tandoorSpice]
+                            : [CulinaryColors.royalBlue, const Color(0xFF38BDF8)],
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                      ),
+                      width: 16,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
+                      backDrawRodData: BackgroundBarChartRodData(
+                        show: true,
+                        toY: maxDailyRevenue > 0 ? (maxDailyRevenue * 1.15) : 1000,
+                        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        // 7-day stats summary bar
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withOpacity(0.4),
+              width: 0.8,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildHistoryStatCol('7-Day Total', '₹${sevenDayRevenue.toStringAsFixed(0)}', CulinaryColors.flameOrange),
+              Container(width: 1, height: 24, color: theme.colorScheme.outlineVariant.withOpacity(0.4)),
+              _buildHistoryStatCol('Daily Average', '₹${(sevenDayRevenue / 7).toStringAsFixed(0)}', CulinaryColors.royalBlue),
+              Container(width: 1, height: 24, color: theme.colorScheme.outlineVariant.withOpacity(0.4)),
+              _buildHistoryStatCol('Settled Bills', '$sevenDayBills paid', CulinaryColors.emeraldGreen),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChartModePill({
+    required ThemeData theme,
+    required ChartMode mode,
+    required IconData icon,
+    required String label,
+  }) {
+    final isSelected = _chartMode == mode;
+    return GestureDetector(
+      onTap: () {
+        if (_chartMode != mode) {
+          NativeApiChannel.triggerNativeHaptic();
+          setState(() => _chartMode = mode);
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? theme.colorScheme.surface : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 12,
+              color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline,
+            ),
+            const SizedBox(width: 2.5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                color: isSelected ? theme.colorScheme.onSurface : theme.colorScheme.outline,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistoryStatCol(String title, String value, Color color) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 1),
+        Text(
+          value,
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: color),
+        ),
+      ],
     );
   }
 
