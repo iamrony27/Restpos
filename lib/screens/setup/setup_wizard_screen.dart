@@ -6,6 +6,7 @@ import '../../core/theme/color_schemes.dart';
 import '../../providers/menu_provider.dart';
 import '../../providers/pos_provider.dart';
 import '../../widgets/dietary_badge.dart';
+import '../../widgets/developer_support_section.dart';
 
 class SetupWizardScreen extends StatefulWidget {
   final bool isInitialSetup;
@@ -1102,6 +1103,9 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
             ),
           ),
         ),
+        const SizedBox(height: 20),
+        const DeveloperSupportSection(),
+        const SizedBox(height: 30),
       ],
     );
   }

@@ -43,4 +43,38 @@ class RestaurantTable {
       currentBillPaise: currentBillPaise ?? this.currentBillPaise,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'seating_capacity': seatingCapacity,
+      'status': status.name,
+      'active_order_id': activeOrderId,
+      'occupied_since': occupiedSince?.toIso8601String(),
+      'current_bill_paise': currentBillPaise,
+    };
+  }
+
+  factory RestaurantTable.fromMap(Map<String, dynamic> map) {
+    TableStatus parseStatus(String? name) {
+      for (final s in TableStatus.values) {
+        if (s.name == name) return s;
+      }
+      return TableStatus.available;
+    }
+
+    return RestaurantTable(
+      id: map['id'] as int,
+      name: map['name'] as String,
+      seatingCapacity: (map['seating_capacity'] as int?) ?? 4,
+      status: parseStatus(map['status'] as String?),
+      activeOrderId: map['active_order_id'] as int?,
+      occupiedSince: map['occupied_since'] != null
+          ? DateTime.tryParse(map['occupied_since'] as String)
+          : null,
+      currentBillPaise: (map['current_bill_paise'] as int?) ?? 0,
+    );
+  }
 }
+

@@ -115,4 +115,73 @@ class NativeApiChannel {
       return false;
     }
   }
+
+  /// Launches Android native photo picker and returns local file path
+  static Future<String?> pickImageFromDevice() async {
+    try {
+      final String? path = await _channel.invokeMethod<String>('pickImage');
+      return path;
+    } on PlatformException catch (e) {
+      // ignore: avoid_print
+      print('NativeApiChannel.pickImageFromDevice failed: ${e.message}');
+      return null;
+    }
+  }
+
+  /// Displays a native Android status bar notification
+  static Future<bool> showNotification({
+    required String title,
+    required String message,
+  }) async {
+    try {
+      final bool? success = await _channel.invokeMethod<bool>('showNotification', {
+        'title': title,
+        'message': message,
+      });
+      return success ?? false;
+    } on PlatformException catch (e) {
+      // ignore: avoid_print
+      print('NativeApiChannel.showNotification failed: ${e.message}');
+      return false;
+    }
+  }
+  /// Writes backup JSON to Download/RestPos via Android MediaStore (Scoped Storage compliant)
+  static Future<String?> saveBackupToRestPos(String jsonContent) async {
+    try {
+      final res = await _channel.invokeMethod<Map<dynamic, dynamic>>('saveBackupToRestPos', {
+        'jsonContent': jsonContent,
+      });
+      return res?['path']?.toString();
+    } on PlatformException catch (e) {
+      // ignore: avoid_print
+      print('NativeApiChannel.saveBackupToRestPos failed: ${e.message}');
+      return null;
+    }
+  }
+
+  /// Reads backup JSON from Download/RestPos via Android MediaStore
+  static Future<String?> readBackupFromRestPos() async {
+    try {
+      final String? jsonStr = await _channel.invokeMethod<String>('readBackupFromRestPos');
+      return jsonStr;
+    } on PlatformException catch (e) {
+      // ignore: avoid_print
+      print('NativeApiChannel.readBackupFromRestPos failed: ${e.message}');
+      return null;
+    }
+  }
+
+  /// Opens an external URL, WhatsApp link, or UPI payment URI via Android Intent
+  static Future<bool> openUrl(String url) async {
+    try {
+      final bool? success = await _channel.invokeMethod<bool>('openUrl', {'url': url});
+      return success ?? false;
+    } on PlatformException catch (e) {
+      // ignore: avoid_print
+      print('NativeApiChannel.openUrl failed: ${e.message}');
+      return false;
+    }
+  }
 }
+
+

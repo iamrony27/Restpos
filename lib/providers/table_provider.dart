@@ -111,4 +111,11 @@ class TableProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void replaceAllTables(List<RestaurantTable> newTables) {
+    _tables.clear();
+    _tables.addAll(newTables);
+    notifyListeners();
+  }
 }
+

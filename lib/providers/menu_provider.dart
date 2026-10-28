@@ -32,7 +32,7 @@ class MenuProvider extends ChangeNotifier {
       pricePaise: 6000,
       dietaryType: DietaryType.veg,
       sku: 'BEV-002',
-      imageUri: 'assets/menu/beverages/cold-coffee.webp',
+      imageUri: 'assets/menu/beverages/filter-coffee.webp',
       salesCount: 68,
       description: 'Traditional South Indian chicory decoction with frothy steamed milk.',
     ),
@@ -103,7 +103,7 @@ class MenuProvider extends ChangeNotifier {
       pricePaise: 32000,
       dietaryType: DietaryType.nonVeg,
       sku: 'APP-004',
-      imageUri: 'assets/menu/starters/chicken-tikka.webp',
+      imageUri: 'assets/menu/starters/tandoori-chicken.webp',
       salesCount: 81,
       description: 'Classic clay-oven roasted chicken spiced with hung curd and garam masala.',
     ),
@@ -273,7 +273,7 @@ class MenuProvider extends ChangeNotifier {
   }
 
   List<MenuItem> getFilteredItems({int categoryId = 0, String query = ''}) {
-    return _items.where((item) {
+    final list = _items.where((item) {
       if (categoryId == -1) {
         // Special category -1 represents 'Bestsellers / Top Selling'
         if (!item.isTopSelling) return false;
@@ -288,6 +288,17 @@ class MenuProvider extends ChangeNotifier {
       }
       return true;
     }).toList();
+
+    // Sort order:
+    // 1. Available / In-Stock items first (sorted by salesCount DESC for bestsellers priority)
+    // 2. Out of stock / Deactivated items pushed to the bottom
+    list.sort((a, b) {
+      if (a.isAvailable && !b.isAvailable) return -1;
+      if (!a.isAvailable && b.isAvailable) return 1;
+      return b.salesCount.compareTo(a.salesCount);
+    });
+
+    return list;
   }
 
   void toggleItemAvailability(int itemId) {
@@ -339,5 +350,11 @@ class MenuProvider extends ChangeNotifier {
       _items[index] = _items[index].copyWith(isAvailable: isAvailable);
       notifyListeners();
     }
+  }
+
+  void replaceAllItems(List<MenuItem> newItems) {
+    _items.clear();
+    _items.addAll(newItems);
+    notifyListeners();
   }
 }

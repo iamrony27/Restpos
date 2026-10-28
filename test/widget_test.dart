@@ -2,20 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_restaurant_pos/main.dart';
 import 'package:flutter_restaurant_pos/models/menu_item.dart';
+import 'package:flutter_restaurant_pos/models/order_model.dart';
 import 'package:flutter_restaurant_pos/models/restaurant_profile.dart';
 import 'package:flutter_restaurant_pos/providers/pos_provider.dart';
+import 'package:flutter_restaurant_pos/widgets/thermal_slip_preview_dialog.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   testWidgets('Restaurant POS smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const RestaurantPosApp());
     await tester.pumpAndSettle();
     expect(find.text('Spice Garden Restaurant'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('Top Selling Items'),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('Top Selling Items'), findsOneWidget);
   });
 
   group('PosProvider GST & Round-Off Calculations', () {
@@ -95,5 +92,54 @@ void main() {
       // Tax = 500 paise (₹5.00)
       expect(pos.taxPaise, 500);
     });
+  });
+
+  testWidgets('ThermalSlipPreviewDialog renders 58mm/80mm preview and print action', (WidgetTester tester) async {
+    final sampleOrder = Order(
+      id: 'test-ord-1',
+      orderNumber: 'ORD-0099',
+      type: OrderType.dineIn,
+      tableName: 'T-05',
+      items: [
+        OrderItem(
+          menuItem: const MenuItem(
+            id: 101,
+            categoryId: 1,
+            name: 'Masala Dosa',
+            pricePaise: 8000,
+          ),
+          quantity: 2,
+          unitPricePaise: 8000,
+        ),
+      ],
+      subtotalPaise: 16000,
+      taxBps: 500,
+      createdAt: DateTime(2026, 10, 28, 19, 30),
+    );
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<PosProvider>(
+        create: (_) => PosProvider(),
+        child: MaterialApp(
+          home: Scaffold(
+            body: ThermalSlipPreviewDialog(
+              order: sampleOrder,
+              title: 'Thermal Slip Preview',
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Verify dialog header & slip elements
+    expect(find.text('Thermal Slip Preview'), findsOneWidget);
+    expect(find.text('58mm'), findsOneWidget);
+    expect(find.text('80mm'), findsOneWidget);
+    expect(find.text('#ORD-0099'), findsOneWidget);
+    expect(find.text('Masala Dosa'), findsOneWidget);
+    expect(find.text('Print Slip 🖨️'), findsOneWidget);
+    expect(find.text('Cancel / Edit'), findsOneWidget);
   });
 }

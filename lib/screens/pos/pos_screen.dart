@@ -1,5 +1,5 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import '../../core/animations/bouncing_button.dart';
 import '../../core/channels/native_api_channel.dart';
@@ -14,6 +14,60 @@ import '../../providers/table_provider.dart';
 import '../../widgets/dietary_badge.dart';
 import 'payment_modal.dart';
 
+Widget buildDishImage(String? uri, {required double height, double width = double.infinity, BoxFit fit = BoxFit.cover, double? cacheWidth}) {
+  if (uri == null || uri.isEmpty) {
+    return Container(
+      height: height,
+      width: width,
+      color: Colors.grey.shade200,
+      child: const Icon(Icons.restaurant_rounded, color: Colors.grey),
+    );
+  }
+  if (uri.startsWith('/') || uri.startsWith('file://')) {
+    final filePath = uri.replaceFirst('file://', '');
+    return Image.file(
+      File(filePath),
+      height: height,
+      width: width,
+      fit: fit,
+      errorBuilder: (_, __, ___) => Container(
+        height: height,
+        width: width,
+        color: Colors.grey.shade200,
+        child: const Icon(Icons.broken_image_rounded, color: Colors.grey),
+      ),
+    );
+  }
+  if (uri.startsWith('http://') || uri.startsWith('https://')) {
+    return Image.network(
+      uri,
+      height: height,
+      width: width,
+      fit: fit,
+      errorBuilder: (_, __, ___) => Container(
+        height: height,
+        width: width,
+        color: Colors.grey.shade200,
+        child: const Icon(Icons.broken_image_rounded, color: Colors.grey),
+      ),
+    );
+  }
+  return Image.asset(
+    uri,
+    height: height,
+    width: width,
+    fit: fit,
+    cacheWidth: cacheWidth?.toInt() ?? 360,
+    errorBuilder: (_, __, ___) => Container(
+      height: height,
+      width: width,
+      color: Colors.grey.shade200,
+      child: const Icon(Icons.restaurant_rounded, color: Colors.grey),
+    ),
+  );
+}
+
+
 class PosScreen extends StatefulWidget {
   const PosScreen({super.key});
 
@@ -24,13 +78,37 @@ class PosScreen extends StatefulWidget {
 class _PosScreenState extends State<PosScreen> {
   final TextEditingController _searchController = TextEditingController();
   DietaryType? _dietaryFilter;
-  bool _isSearchVisible = true;
+  bool _isGridView = true;
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
+
+  static const List<String> _presetPhotos = [
+    'assets/menu/beverages/masala-chai.webp',
+    'assets/menu/beverages/filter-coffee.webp',
+    'assets/menu/beverages/mango-lassi.webp',
+    'assets/menu/beverages/cold-coffee.webp',
+    'assets/menu/beverages/fresh-lime-soda.webp',
+    'assets/menu/starters/paneer-tikka.webp',
+    'assets/menu/starters/chicken-65.webp',
+    'assets/menu/starters/tandoori-chicken.webp',
+    'assets/menu/starters/veg-spring-rolls.webp',
+    'assets/menu/vegetarian/paneer-butter-masala.webp',
+    'assets/menu/vegetarian/dal-makhani.webp',
+    'assets/menu/chicken/butter-chicken.webp',
+    'assets/menu/chicken/chicken-biryani.webp',
+    'assets/menu/mutton/mutton-rogan-josh.webp',
+    'assets/menu/indian-bread/butter-naan.webp',
+    'assets/menu/rice/jeera-rice.webp',
+    'assets/menu/desserts/gulab-jamun.webp',
+    'assets/menu/desserts/rasmalai.webp',
+    'assets/menu/desserts/chocolate-brownie.webp',
+  ];
+
+  bool _isPresetPhoto(String uri) => _presetPhotos.contains(uri);
 
   void _showAddEditDishDialog(BuildContext context, [MenuItem? itemToEdit]) {
     final menuProvider = context.read<MenuProvider>();
@@ -41,39 +119,20 @@ class _PosScreenState extends State<PosScreen> {
       text: itemToEdit != null ? (itemToEdit.pricePaise / 100).toStringAsFixed(0) : '',
     );
     final skuController = TextEditingController(text: itemToEdit?.sku ?? '');
-    final descController = TextEditingController(text: itemToEdit?.description ?? '');
 
     int selectedCategoryId = itemToEdit?.categoryId ??
         (menuProvider.categories.isNotEmpty ? menuProvider.categories.first.id : 1);
     DietaryType selectedDietaryType = itemToEdit?.dietaryType ?? DietaryType.veg;
     bool isTopSelling = itemToEdit?.isTopSelling ?? false;
     bool isAvailable = itemToEdit?.isAvailable ?? true;
-    String? selectedImageUri = itemToEdit?.imageUri;
+    String? selectedImageUri = itemToEdit?.imageUri ?? _presetPhotos.first;
 
-    // Available sample food photos
-    final availablePhotos = [
-      'assets/menu/vegetarian/paneer-butter-masala.webp',
-      'assets/menu/vegetarian/dal-makhani.webp',
-      'assets/menu/vegetarian/kadai-paneer.webp',
-      'assets/menu/chicken/butter-chicken.webp',
-      'assets/menu/chicken/chicken-biryani.webp',
-      'assets/menu/chicken/chicken-tikka-masala.webp',
-      'assets/menu/mutton/mutton-rogan-josh.webp',
-      'assets/menu/biryani/veg-biryani.webp',
-      'assets/menu/biryani/hyderabadi-dum-biryani.webp',
-      'assets/menu/indian-bread/butter-naan.webp',
-      'assets/menu/indian-bread/garlic-naan.webp',
-      'assets/menu/starters/paneer-tikka.webp',
-      'assets/menu/starters/chicken-tikka.webp',
-      'assets/menu/chinese/chilli-chicken.webp',
-      'assets/menu/beverages/masala-chai.webp',
-      'assets/menu/beverages/mango-lassi.webp',
-      'assets/menu/beverages/cold-coffee.webp',
-      'assets/menu/beverages/fresh-lime-soda.webp',
-      'assets/menu/desserts/gulab-jamun.webp',
-      'assets/menu/desserts/kesar-kulfi.webp',
-      'assets/menu/desserts/chocolate-brownie.webp',
-    ];
+    final customUrlController = TextEditingController(
+      text: (itemToEdit?.imageUri != null && !_isPresetPhoto(itemToEdit!.imageUri!)) ? itemToEdit.imageUri : '',
+    );
+    bool isCustomUrlMode = customUrlController.text.isNotEmpty;
+
+    const availablePhotos = _presetPhotos;
 
     showDialog(
       context: context,
@@ -104,60 +163,124 @@ class _PosScreenState extends State<PosScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Photo Preview and Selector
-                      const Text(
-                        'Item Photo',
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Item Photo',
+                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              TextButton.icon(
+                                style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                                icon: const Icon(Icons.upload_file_rounded, size: 16),
+                                label: const Text('From Phone', style: TextStyle(fontSize: 12)),
+                                onPressed: () async {
+                                  final picked = await NativeApiChannel.pickImageFromDevice();
+                                  if (picked != null) {
+                                    setDlgState(() {
+                                      selectedImageUri = picked;
+                                      customUrlController.text = picked;
+                                      isCustomUrlMode = true;
+                                    });
+                                  }
+                                },
+                              ),
+                              TextButton.icon(
+                                style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                                icon: Icon(
+                                  isCustomUrlMode ? Icons.photo_library_rounded : Icons.link_rounded,
+                                  size: 16,
+                                ),
+                                label: Text(
+                                  isCustomUrlMode ? 'Presets' : 'Link',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                                onPressed: () {
+                                  setDlgState(() => isCustomUrlMode = !isCustomUrlMode);
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 6),
-                      Container(
-                        height: 90,
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.4),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: theme.colorScheme.outlineVariant.withOpacity(0.4)),
-                        ),
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: availablePhotos.length,
-                          separatorBuilder: (_, __) => const SizedBox(width: 8),
-                          itemBuilder: (context, idx) {
-                            final photoPath = availablePhotos[idx];
-                            final isSelected = selectedImageUri == photoPath;
-                            return GestureDetector(
-                              onTap: () {
-                                setDlgState(() {
-                                  selectedImageUri = photoPath;
-                                });
-                              },
-                              child: Stack(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.asset(
-                                      photoPath,
-                                      width: 80,
-                                      height: 80,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                  if (isSelected)
-                                    Positioned.fill(
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          border: Border.all(color: theme.colorScheme.primary, width: 3),
-                                          borderRadius: BorderRadius.circular(8),
-                                          color: theme.colorScheme.primary.withOpacity(0.25),
-                                        ),
-                                        child: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 24),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            );
+                      if (isCustomUrlMode) ...[
+                        TextField(
+                          controller: customUrlController,
+                          decoration: InputDecoration(
+                            labelText: 'Image Asset or URL',
+                            hintText: 'e.g. assets/menu/... or https://...',
+                            prefixIcon: const Icon(Icons.image_outlined, size: 20),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onChanged: (val) {
+                            setDlgState(() {
+                              selectedImageUri = val.trim().isNotEmpty ? val.trim() : null;
+                            });
                           },
                         ),
-                      ),
+                        const SizedBox(height: 10),
+                      ] else ...[
+                        Container(
+                          height: 84,
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.4),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: theme.colorScheme.outlineVariant.withOpacity(0.4)),
+                          ),
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: availablePhotos.length,
+                            separatorBuilder: (_, __) => const SizedBox(width: 8),
+                            itemBuilder: (context, idx) {
+                              final photoPath = availablePhotos[idx];
+                              final isSelected = selectedImageUri == photoPath;
+                              return GestureDetector(
+                                onTap: () {
+                                  setDlgState(() {
+                                    selectedImageUri = photoPath;
+                                  });
+                                },
+                                child: Stack(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.asset(
+                                        photoPath,
+                                        width: 76,
+                                        height: 76,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Container(
+                                          width: 76,
+                                          height: 76,
+                                          color: Colors.grey.shade200,
+                                          child: const Icon(Icons.fastfood_rounded, color: Colors.grey),
+                                        ),
+                                      ),
+                                    ),
+                                    if (isSelected)
+                                      Positioned.fill(
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: theme.colorScheme.primary, width: 3),
+                                            borderRadius: BorderRadius.circular(8),
+                                            color: theme.colorScheme.primary.withOpacity(0.25),
+                                          ),
+                                          child: const Icon(Icons.check_circle_rounded, color: Colors.white, size: 22),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       const SizedBox(height: 12),
                       TextField(
                         controller: nameController,
@@ -241,16 +364,6 @@ class _PosScreenState extends State<PosScreen> {
                         value: isAvailable,
                         onChanged: (val) => setDlgState(() => isAvailable = val),
                       ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: descController,
-                        maxLines: 2,
-                        decoration: InputDecoration(
-                          labelText: 'Description (Optional)',
-                          hintText: 'Ingredients, spice level, preparation...',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -273,6 +386,10 @@ class _PosScreenState extends State<PosScreen> {
 
                     final pricePaise = (priceNum * 100).round();
 
+                    final finalImageUri = isCustomUrlMode && customUrlController.text.trim().isNotEmpty
+                        ? customUrlController.text.trim()
+                        : selectedImageUri;
+
                     if (isEditing) {
                       final updated = itemToEdit.copyWith(
                         name: name,
@@ -280,10 +397,9 @@ class _PosScreenState extends State<PosScreen> {
                         categoryId: selectedCategoryId,
                         dietaryType: selectedDietaryType,
                         sku: skuController.text.trim().isEmpty ? null : skuController.text.trim(),
-                        description: descController.text.trim().isEmpty ? null : descController.text.trim(),
                         isTopSelling: isTopSelling,
                         isAvailable: isAvailable,
-                        imageUri: selectedImageUri,
+                        imageUri: finalImageUri,
                       );
                       menuProvider.updateItem(updated);
                     } else {
@@ -300,12 +416,9 @@ class _PosScreenState extends State<PosScreen> {
                         sku: skuController.text.trim().isEmpty
                             ? 'DISH-$nextId'
                             : skuController.text.trim(),
-                        description: descController.text.trim().isEmpty
-                            ? null
-                            : descController.text.trim(),
                         isTopSelling: isTopSelling,
                         isAvailable: isAvailable,
-                        imageUri: selectedImageUri,
+                        imageUri: finalImageUri,
                       );
                       menuProvider.addItem(newItem);
                     }
@@ -484,18 +597,17 @@ class _PosScreenState extends State<PosScreen> {
           style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: ActionChip(
-              avatar: const Icon(Icons.add_circle_rounded, size: 16, color: CulinaryColors.flameOrange),
-              label: const Text('Add Item', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
-              side: const BorderSide(color: CulinaryColors.flameOrange, width: 1.2),
-              backgroundColor: CulinaryColors.flameOrange.withOpacity(0.08),
-              onPressed: () {
-                NativeApiChannel.triggerNativeHaptic();
-                _showAddEditDishDialog(context);
-              },
+          // Grid / List Toggle
+          IconButton(
+            tooltip: _isGridView ? 'Switch to List View' : 'Switch to Grid View',
+            icon: Icon(
+              _isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
+              color: CulinaryColors.flameOrange,
             ),
+            onPressed: () {
+              NativeApiChannel.triggerNativeHaptic();
+              setState(() => _isGridView = !_isGridView);
+            },
           ),
           // Order Mode Switcher (Dine-In / Takeaway)
           Padding(
@@ -528,71 +640,32 @@ class _PosScreenState extends State<PosScreen> {
       ),
       body: Column(
         children: [
-          // Table Selector Bar (if Dine-In)
-          if (posProvider.orderType == OrderType.dineIn)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: theme.colorScheme.surfaceContainerHigh.withOpacity(0.5),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.table_restaurant_rounded,
-                    size: 20,
-                    color: posProvider.selectedTableName != null
-                        ? theme.colorScheme.primary
-                        : const Color(0xFFD97706),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    posProvider.selectedTableName != null
-                        ? 'Table: ${posProvider.selectedTableName}'
-                        : 'Select Table',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: posProvider.selectedTableName != null
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  const Spacer(),
-                  ElevatedButton.icon(
-                    onPressed: () => _showTableSelector(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: posProvider.selectedTableName != null
-                          ? theme.colorScheme.primaryContainer
-                          : theme.colorScheme.primary,
-                      foregroundColor: posProvider.selectedTableName != null
-                          ? theme.colorScheme.onPrimaryContainer
-                          : Colors.white,
-                      visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    icon: const Icon(Icons.touch_app_rounded, size: 16),
-                    label: Text(
-                      posProvider.selectedTableName != null ? 'Change Table' : 'Select Table',
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          // Search Bar (Hides on scroll down)
-          AnimatedSize(
-            duration: const Duration(milliseconds: 260),
-            curve: Curves.easeInOutCubic,
-            child: _isSearchVisible
-                ? Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+          // Merged Search Bar & Table Selector in a Single Row
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
+            child: Row(
+              children: [
+                // Expanded Search Bar
+                Expanded(
+                  child: SizedBox(
+                    height: 46,
                     child: SearchBar(
                       controller: _searchController,
-                      hintText: 'Search dishes, codes or SKU...',
-                      leading: const Icon(Icons.search_rounded),
+                      hintText: 'Search dishes, code, SKU...',
+                      hintStyle: WidgetStatePropertyAll(
+                        TextStyle(fontSize: 13, color: theme.colorScheme.outline),
+                      ),
+                      textStyle: const WidgetStatePropertyAll(
+                        TextStyle(fontSize: 13),
+                      ),
+                      leading: const Icon(Icons.search_rounded, size: 20),
+                      padding: const WidgetStatePropertyAll(
+                        EdgeInsets.symmetric(horizontal: 10),
+                      ),
                       trailing: [
                         if (_searchController.text.isNotEmpty)
                           IconButton(
-                            icon: const Icon(Icons.clear_rounded),
+                            icon: const Icon(Icons.clear_rounded, size: 18),
                             onPressed: () {
                               _searchController.clear();
                               posProvider.setSearchQuery('');
@@ -603,11 +676,75 @@ class _PosScreenState extends State<PosScreen> {
                       elevation: const WidgetStatePropertyAll(0),
                       backgroundColor: WidgetStatePropertyAll(theme.colorScheme.surfaceContainerLow),
                       shape: WidgetStatePropertyAll(
-                        RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+                            width: 1,
+                          ),
+                        ),
                       ),
                     ),
-                  )
-                : const SizedBox.shrink(),
+                  ),
+                ),
+                if (posProvider.orderType == OrderType.dineIn) ...[
+                  const SizedBox(width: 8),
+                  // Compact Optional Table Selector Pill
+                  GestureDetector(
+                    onTap: () {
+                      NativeApiChannel.triggerNativeHaptic();
+                      _showTableSelector(context);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      height: 46,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: posProvider.selectedTableName != null
+                            ? theme.colorScheme.primaryContainer
+                            : theme.colorScheme.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: posProvider.selectedTableName != null
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.outlineVariant.withOpacity(0.6),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.table_restaurant_rounded,
+                            size: 16,
+                            color: posProvider.selectedTableName != null
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.outline,
+                          ),
+                          const SizedBox(width: 4),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 80),
+                            child: Text(
+                              posProvider.selectedTableName != null
+                                  ? posProvider.selectedTableName!
+                                  : 'Table (Opt)',
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: posProvider.selectedTableName != null
+                                    ? theme.colorScheme.onPrimaryContainer
+                                    : theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
 
           // Categories & Dietary Filters
@@ -667,24 +804,13 @@ class _PosScreenState extends State<PosScreen> {
                   selected: _dietaryFilter == DietaryType.nonVeg,
                   onSelected: (sel) => setState(() => _dietaryFilter = sel ? DietaryType.nonVeg : null),
                 ),
-                const SizedBox(width: 8),
-                ActionChip(
-                  avatar: const Icon(Icons.add_rounded, size: 16, color: CulinaryColors.flameOrange),
-                  label: const Text('+ Add Item', style: TextStyle(fontWeight: FontWeight.w700, color: CulinaryColors.flameOrange)),
-                  backgroundColor: CulinaryColors.flameOrange.withOpacity(0.08),
-                  side: BorderSide(color: CulinaryColors.flameOrange.withOpacity(0.4)),
-                  onPressed: () {
-                    NativeApiChannel.triggerNativeHaptic();
-                    _showAddEditDishDialog(context);
-                  },
-                ),
               ],
             ),
           ),
 
           const SizedBox(height: 6),
 
-          // Dishes Grid with Food Photos
+          // Dishes Grid / List View with Food Photos
           Expanded(
             child: dishes.isEmpty
                 ? Center(
@@ -694,530 +820,796 @@ class _PosScreenState extends State<PosScreen> {
                         Icon(Icons.search_off_rounded, size: 54, color: theme.colorScheme.outline),
                         const SizedBox(height: 12),
                         Text('No dishes match your filter', style: theme.textTheme.titleMedium),
-                        const SizedBox(height: 14),
-                        ElevatedButton.icon(
-                          onPressed: () => _showAddEditDishDialog(context),
-                          icon: const Icon(Icons.add_rounded),
-                          label: const Text('Add New Dish'),
-                        ),
                       ],
                     ),
                   )
-                : NotificationListener<ScrollNotification>(
-                    onNotification: (notification) {
-                      if (notification is UserScrollNotification) {
-                        if (notification.direction == ScrollDirection.reverse && _isSearchVisible) {
-                          setState(() => _isSearchVisible = false);
-                        } else if (notification.direction == ScrollDirection.forward && !_isSearchVisible) {
-                          setState(() => _isSearchVisible = true);
-                        }
-                      } else if (notification is ScrollUpdateNotification) {
-                        final delta = notification.scrollDelta ?? 0.0;
-                        if (delta > 8 && _isSearchVisible) {
-                          setState(() => _isSearchVisible = false);
-                        } else if (delta < -8 && !_isSearchVisible) {
-                          setState(() => _isSearchVisible = true);
-                        }
-                      }
-                      return false;
-                    },
-                    child: GridView.builder(
-                      padding: const EdgeInsets.fromLTRB(12, 6, 12, 90),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: 0.88,
-                      ),
-                      itemCount: dishes.length,
-                      itemBuilder: (context, index) {
-                        final item = dishes[index];
-                        final cartLine = posProvider.cart.where((l) => l.item.id == item.id).firstOrNull;
+                : _isGridView
+                    ? GridView.builder(
+                        padding: const EdgeInsets.fromLTRB(12, 6, 12, 90),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: 0.92,
+                        ),
+                        itemCount: dishes.length,
+                        itemBuilder: (context, index) {
+                          final item = dishes[index];
+                          final cartLine = posProvider.cart.where((l) => l.item.id == item.id).firstOrNull;
 
-                        return Card(
-                          clipBehavior: Clip.antiAlias,
-                          elevation: cartLine != null ? 3 : 1,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(
-                              color: cartLine != null
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.outlineVariant.withOpacity(0.5),
-                              width: cartLine != null ? 1.5 : 1,
-                            ),
-                          ),
-                          color: !item.isAvailable
-                              ? theme.colorScheme.surfaceContainerHigh.withOpacity(0.55)
-                              : theme.colorScheme.surface,
-                          child: InkWell(
-                            onTap: () {
-                              if (item.isAvailable) {
-                                posProvider.addToCart(item);
-                                NativeApiChannel.triggerNativeHaptic();
-                              } else {
-                                NativeApiChannel.triggerNativeHaptic();
-                                showModalBottomSheet(
-                                  context: context,
-                                  shape: const RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                                  ),
-                                  builder: (ctx) => SafeArea(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
+                          return RepaintBoundary(
+                            child: Card(
+                              clipBehavior: Clip.antiAlias,
+                              elevation: cartLine != null ? 3 : 1,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                side: BorderSide(
+                                  color: cartLine != null
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.outlineVariant.withOpacity(0.5),
+                                  width: cartLine != null ? 1.5 : 1,
+                                ),
+                              ),
+                              color: !item.isAvailable
+                                  ? theme.colorScheme.surfaceContainerHigh.withOpacity(0.55)
+                                  : theme.colorScheme.surface,
+                              child: InkWell(
+                                onTap: () {
+                                  if (item.isAvailable) {
+                                    posProvider.addToCart(item);
+                                    NativeApiChannel.triggerNativeHaptic();
+                                  } else {
+                                    NativeApiChannel.triggerNativeHaptic();
+                                    showModalBottomSheet(
+                                      context: context,
+                                      shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                                      ),
+                                      builder: (ctx) => SafeArea(
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              DietaryBadge(type: item.dietaryType, size: 16),
-                                              const SizedBox(width: 10),
-                                              Expanded(
-                                                child: Text(
-                                                  item.name,
-                                                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                                              Row(
+                                                children: [
+                                                  DietaryBadge(type: item.dietaryType, size: 16),
+                                                  const SizedBox(width: 10),
+                                                  Expanded(
+                                                    child: Text(
+                                                      item.name,
+                                                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                                                    ),
+                                                  ),
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.red.shade100,
+                                                      borderRadius: BorderRadius.circular(6),
+                                                    ),
+                                                    child: Text(
+                                                      'Out of Stock',
+                                                      style: TextStyle(
+                                                        color: Colors.red.shade900,
+                                                        fontSize: 11,
+                                                        fontWeight: FontWeight.w800,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 14),
+                                              const Text(
+                                                'This item is currently deactivated. Would you like to reactivate it or edit details?',
+                                                style: TextStyle(fontSize: 13, color: Colors.grey),
+                                              ),
+                                              const SizedBox(height: 18),
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: OutlinedButton.icon(
+                                                      icon: const Icon(Icons.edit_rounded, size: 18),
+                                                      label: const Text('Edit Dish'),
+                                                      onPressed: () {
+                                                        Navigator.pop(ctx);
+                                                        _showAddEditDishDialog(context, item);
+                                                      },
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  Expanded(
+                                                    child: ElevatedButton.icon(
+                                                      icon: const Icon(Icons.check_circle_rounded, size: 18),
+                                                      label: const Text('Activate Dish'),
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor: CulinaryColors.emeraldGreen,
+                                                        foregroundColor: Colors.white,
+                                                      ),
+                                                      onPressed: () {
+                                                        Navigator.pop(ctx);
+                                                        menuProvider.setItemAvailability(item.id, true);
+                                                        ScaffoldMessenger.of(context).showSnackBar(
+                                                          SnackBar(
+                                                            content: Text('✓ ${item.name} is now Available / In Stock'),
+                                                            backgroundColor: CulinaryColors.emeraldGreen,
+                                                            duration: const Duration(seconds: 2),
+                                                          ),
+                                                        );
+                                                      },
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                                onLongPress: () => _showAddEditDishDialog(context, item),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Food Photo with Badges & 3-Dot Actions Overlay
+                                    Stack(
+                                      children: [
+                                        buildDishImage(
+                                          item.imageUri,
+                                          height: 122,
+                                          width: double.infinity,
+                                          fit: BoxFit.cover,
+                                          cacheWidth: 360,
+                                        ),
+
+                                        // Subtle Gradient Scrim
+                                        Container(
+                                          height: 122,
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                              colors: [
+                                                Colors.black.withOpacity(0.35),
+                                                Colors.transparent,
+                                                Colors.black.withOpacity(0.2),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+
+                                        // Dietary Badge (Top Left)
+                                        Positioned(
+                                          top: 8,
+                                          left: 8,
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.all(3),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius: BorderRadius.circular(6),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.black.withOpacity(0.2),
+                                                      blurRadius: 4,
+                                                    ),
+                                                  ],
+                                                ),
+                                                child: DietaryBadge(type: item.dietaryType, size: 12),
+                                              ),
+                                              if (item.isTopSelling) ...[
+                                                const SizedBox(width: 4),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFFF59E0B),
+                                                    borderRadius: BorderRadius.circular(8),
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.black.withOpacity(0.25),
+                                                        blurRadius: 4,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  child: const Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      Icon(Icons.star_rounded, color: Colors.white, size: 11),
+                                                      SizedBox(width: 1),
+                                                      Text(
+                                                        'Best',
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 9,
+                                                          fontWeight: FontWeight.w800,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+
+                                        // Deactivated / Out of Stock Dark Overlay (IgnorePointer so 3-dot and card get gestures)
+                                        if (!item.isAvailable)
+                                          Positioned.fill(
+                                            child: IgnorePointer(
+                                              child: Container(
+                                                color: Colors.black.withOpacity(0.55),
+                                                alignment: Alignment.center,
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.red.shade800,
+                                                    borderRadius: BorderRadius.circular(6),
+                                                    boxShadow: [
+                                                      BoxShadow(color: Colors.black.withOpacity(0.35), blurRadius: 4),
+                                                    ],
+                                                  ),
+                                                  child: const Text(
+                                                    'OUT OF STOCK',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.w900,
+                                                      fontSize: 10,
+                                                      letterSpacing: 0.5,
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.red.shade100,
-                                                  borderRadius: BorderRadius.circular(6),
-                                                ),
-                                                child: Text(
-                                                  'Out of Stock',
-                                                  style: TextStyle(
-                                                    color: Colors.red.shade900,
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+
+                                        // 3-Dot Quick Action Menu (Top Right - ON TOP OF OVERLAY)
+                                        Positioned(
+                                          top: 4,
+                                          right: 4,
+                                          child: PopupMenuButton<String>(
+                                            padding: EdgeInsets.zero,
+                                            icon: Container(
+                                              padding: const EdgeInsets.all(4),
+                                              decoration: BoxDecoration(
+                                                color: Colors.black.withOpacity(0.6),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(Icons.more_vert_rounded, color: Colors.white, size: 15),
+                                            ),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                            onSelected: (val) {
+                                              if (val == 'toggle') {
+                                                menuProvider.toggleItemAvailability(item.id);
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      item.isAvailable
+                                                          ? '${item.name} marked Out of Stock / Inactive'
+                                                          : '${item.name} is now Available / In Stock',
+                                                    ),
+                                                    duration: const Duration(seconds: 2),
                                                   ),
+                                                );
+                                              } else if (val == 'edit') {
+                                                _showAddEditDishDialog(context, item);
+                                              } else if (val == 'delete') {
+                                                _confirmDeleteDish(context, item);
+                                              }
+                                            },
+                                            itemBuilder: (context) => [
+                                              PopupMenuItem(
+                                                value: 'toggle',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      item.isAvailable ? Icons.block_rounded : Icons.check_circle_rounded,
+                                                      color: item.isAvailable ? Colors.orange : Colors.green,
+                                                      size: 18,
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(item.isAvailable ? 'Deactivate (Out of Stock)' : 'Activate (In Stock)'),
+                                                  ],
+                                                ),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'edit',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.edit_rounded, color: Colors.blue, size: 18),
+                                                    SizedBox(width: 8),
+                                                    Text('Edit Dish'),
+                                                  ],
+                                                ),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'delete',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                                                    SizedBox(width: 8),
+                                                    Text('Delete Dish', style: TextStyle(color: Colors.red)),
+                                                  ],
                                                 ),
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(height: 14),
-                                          const Text(
-                                            'This item is currently deactivated. Would you like to reactivate it or edit details?',
-                                            style: TextStyle(fontSize: 13, color: Colors.grey),
-                                          ),
-                                          const SizedBox(height: 18),
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: OutlinedButton.icon(
-                                                  icon: const Icon(Icons.edit_rounded, size: 18),
-                                                  label: const Text('Edit Dish'),
-                                                  onPressed: () {
-                                                    Navigator.pop(ctx);
-                                                    _showAddEditDishDialog(context, item);
-                                                  },
-                                                ),
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Expanded(
-                                                child: ElevatedButton.icon(
-                                                  icon: const Icon(Icons.check_circle_rounded, size: 18),
-                                                  label: const Text('Activate Dish'),
-                                                  style: ElevatedButton.styleFrom(
-                                                    backgroundColor: CulinaryColors.emeraldGreen,
-                                                    foregroundColor: Colors.white,
+                                        ),
+
+                                        // Quantity in Cart overlay (Bottom Left of photo)
+                                        if (cartLine != null)
+                                          Positioned(
+                                            bottom: 6,
+                                            left: 8,
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: theme.colorScheme.primary,
+                                                borderRadius: BorderRadius.circular(10),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black.withOpacity(0.3),
+                                                    blurRadius: 4,
                                                   ),
-                                                  onPressed: () {
-                                                    Navigator.pop(ctx);
-                                                    menuProvider.setItemAvailability(item.id, true);
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text('✓ ${item.name} is now Available / In Stock'),
-                                                        backgroundColor: CulinaryColors.emeraldGreen,
-                                                        duration: const Duration(seconds: 2),
-                                                      ),
-                                                    );
-                                                  },
+                                                ],
+                                              ),
+                                              child: Text(
+                                                '${cartLine.quantity} in cart',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w800,
                                                 ),
                                               ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+
+                                    // Dish Content
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            item.name,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: theme.textTheme.titleSmall?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 13,
+                                              height: 1.2,
+                                            ),
+                                          ),
+                                          if (item.sku != null)
+                                            Padding(
+                                              padding: const EdgeInsets.only(top: 1),
+                                              child: Text(
+                                                item.sku!,
+                                                style: theme.textTheme.labelSmall?.copyWith(
+                                                  color: theme.colorScheme.outline,
+                                                  fontSize: 10,
+                                                ),
+                                              ),
+                                            ),
+                                          const SizedBox(height: 4),
+
+                                          // Price & Quick Add Button Row
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            crossAxisAlignment: CrossAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                item.formattedPrice,
+                                                style: theme.textTheme.titleMedium?.copyWith(
+                                                  fontWeight: FontWeight.w800,
+                                                  color: item.isAvailable ? theme.colorScheme.primary : Colors.grey,
+                                                  fontSize: 15,
+                                                ),
+                                              ),
+                                              if (item.isAvailable && cartLine != null && cartLine.quantity > 0)
+                                                Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    InkWell(
+                                                      onTap: () {
+                                                        NativeApiChannel.triggerNativeHaptic();
+                                                        posProvider.decrementQuantity(item.id);
+                                                      },
+                                                      borderRadius: BorderRadius.circular(6),
+                                                      child: Container(
+                                                        padding: const EdgeInsets.all(4),
+                                                        decoration: BoxDecoration(
+                                                          color: theme.colorScheme.primary.withOpacity(0.12),
+                                                          borderRadius: BorderRadius.circular(6),
+                                                        ),
+                                                        child: Icon(
+                                                          Icons.remove_rounded,
+                                                          size: 15,
+                                                          color: theme.colorScheme.primary,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Padding(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                                                      child: Text(
+                                                        '${cartLine.quantity}',
+                                                        style: TextStyle(
+                                                          fontWeight: FontWeight.w800,
+                                                          fontSize: 13,
+                                                          color: theme.colorScheme.primary,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    InkWell(
+                                                      onTap: () {
+                                                        NativeApiChannel.triggerNativeHaptic();
+                                                        posProvider.addToCart(item);
+                                                      },
+                                                      borderRadius: BorderRadius.circular(6),
+                                                      child: Container(
+                                                        padding: const EdgeInsets.all(4),
+                                                        decoration: BoxDecoration(
+                                                          color: theme.colorScheme.primary,
+                                                          borderRadius: BorderRadius.circular(6),
+                                                        ),
+                                                        child: const Icon(
+                                                          Icons.add_rounded,
+                                                          size: 15,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                )
+                                              else
+                                                InkWell(
+                                                  onTap: () {
+                                                    if (item.isAvailable) {
+                                                      posProvider.addToCart(item);
+                                                      NativeApiChannel.triggerNativeHaptic();
+                                                    }
+                                                  },
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  child: Container(
+                                                    padding: const EdgeInsets.all(5),
+                                                    decoration: BoxDecoration(
+                                                      color: item.isAvailable
+                                                          ? theme.colorScheme.primary.withOpacity(0.12)
+                                                          : Colors.grey.withOpacity(0.12),
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                    child: Icon(
+                                                      item.isAvailable ? Icons.add_rounded : Icons.block_rounded,
+                                                      size: 18,
+                                                      color: item.isAvailable ? theme.colorScheme.primary : Colors.grey,
+                                                    ),
+                                                  ),
+                                                ),
                                             ],
                                           ),
                                         ],
                                       ),
                                     ),
-                                  ),
-                                );
-                              }
-                            },
-                            onLongPress: () => _showAddEditDishDialog(context, item),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                  // Food Photo with Badges & 3-Dot Actions Overlay
-                                  Stack(
-                                    children: [
-                                      if (item.imageUri != null)
-                                        Image.asset(
-                                          item.imageUri!,
-                                          height: 122,
-                                          width: double.infinity,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return Container(
-                                              height: 122,
-                                              color: theme.colorScheme.surfaceContainerHighest,
-                                              child: Icon(Icons.restaurant_rounded, color: theme.colorScheme.outline),
-                                            );
-                                          },
-                                        )
-                                      else
-                                        Container(
-                                          height: 122,
-                                          color: theme.colorScheme.surfaceContainerHighest,
-                                          child: Icon(Icons.restaurant_rounded, color: theme.colorScheme.outline),
-                                        ),
-
-                                      // Subtle Gradient Scrim
-                                      Container(
-                                        height: 122,
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            begin: Alignment.topCenter,
-                                            end: Alignment.bottomCenter,
-                                            colors: [
-                                              Colors.black.withOpacity(0.35),
-                                              Colors.transparent,
-                                              Colors.black.withOpacity(0.2),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-
-                                      // Dietary Badge (Top Left)
-                                      Positioned(
-                                        top: 8,
-                                        left: 8,
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.all(3),
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius: BorderRadius.circular(6),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.black.withOpacity(0.2),
-                                                    blurRadius: 4,
-                                                  ),
-                                                ],
-                                              ),
-                                              child: DietaryBadge(type: item.dietaryType, size: 12),
-                                            ),
-                                            if (item.isTopSelling) ...[
-                                              const SizedBox(width: 4),
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                                decoration: BoxDecoration(
-                                                  color: const Color(0xFFF59E0B),
-                                                  borderRadius: BorderRadius.circular(8),
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: Colors.black.withOpacity(0.25),
-                                                      blurRadius: 4,
-                                                    ),
-                                                  ],
-                                                ),
-                                                child: const Row(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    Icon(Icons.star_rounded, color: Colors.white, size: 11),
-                                                    SizedBox(width: 1),
-                                                    Text(
-                                                      'Best',
-                                                      style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 9,
-                                                        fontWeight: FontWeight.w800,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                      ),
-
-                                      // Deactivated / Out of Stock Dark Overlay (IgnorePointer so 3-dot and card get gestures)
-                                      if (!item.isAvailable)
-                                        Positioned.fill(
-                                          child: IgnorePointer(
-                                            child: Container(
-                                              color: Colors.black.withOpacity(0.55),
-                                              alignment: Alignment.center,
-                                              child: Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.red.shade800,
-                                                  borderRadius: BorderRadius.circular(6),
-                                                  boxShadow: [
-                                                    BoxShadow(color: Colors.black.withOpacity(0.35), blurRadius: 4),
-                                                  ],
-                                                ),
-                                                child: const Text(
-                                                  'OUT OF STOCK',
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.w900,
-                                                    fontSize: 10,
-                                                    letterSpacing: 0.5,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-
-                                      // 3-Dot Quick Action Menu (Top Right - ON TOP OF OVERLAY)
-                                      Positioned(
-                                        top: 4,
-                                        right: 4,
-                                        child: PopupMenuButton<String>(
-                                          padding: EdgeInsets.zero,
-                                          icon: Container(
-                                            padding: const EdgeInsets.all(4),
-                                            decoration: BoxDecoration(
-                                              color: Colors.black.withOpacity(0.6),
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: const Icon(Icons.more_vert_rounded, color: Colors.white, size: 15),
-                                          ),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                          onSelected: (val) {
-                                            if (val == 'toggle') {
-                                              menuProvider.toggleItemAvailability(item.id);
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text(
-                                                    item.isAvailable
-                                                        ? '${item.name} marked Out of Stock / Inactive'
-                                                        : '${item.name} is now Available / In Stock',
-                                                  ),
-                                                  duration: const Duration(seconds: 2),
-                                                ),
-                                              );
-                                            } else if (val == 'edit') {
-                                              _showAddEditDishDialog(context, item);
-                                            } else if (val == 'delete') {
-                                              _confirmDeleteDish(context, item);
-                                            }
-                                          },
-                                          itemBuilder: (context) => [
-                                            PopupMenuItem(
-                                              value: 'toggle',
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    item.isAvailable ? Icons.block_rounded : Icons.check_circle_rounded,
-                                                    color: item.isAvailable ? Colors.orange : Colors.green,
-                                                    size: 18,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(item.isAvailable ? 'Deactivate (Out of Stock)' : 'Activate (In Stock)'),
-                                                ],
-                                              ),
-                                            ),
-                                            const PopupMenuItem(
-                                              value: 'edit',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.edit_rounded, color: Colors.blue, size: 18),
-                                                  SizedBox(width: 8),
-                                                  Text('Edit Dish'),
-                                                ],
-                                              ),
-                                            ),
-                                            const PopupMenuItem(
-                                              value: 'delete',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
-                                                  SizedBox(width: 8),
-                                                  Text('Delete Dish', style: TextStyle(color: Colors.red)),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-
-                                      // Quantity in Cart overlay (Bottom Left of photo)
-                                      if (cartLine != null)
-                                        Positioned(
-                                          bottom: 6,
-                                          left: 8,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: theme.colorScheme.primary,
-                                              borderRadius: BorderRadius.circular(10),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.black.withOpacity(0.3),
-                                                  blurRadius: 4,
-                                                ),
-                                              ],
-                                            ),
-                                            child: Text(
-                                              '${cartLine.quantity} in cart',
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w800,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-
-                                  // Dish Content
-                                  Padding(
-                                    padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          item.name,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: theme.textTheme.titleSmall?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 13,
-                                            height: 1.2,
-                                          ),
-                                        ),
-                                        if (item.sku != null)
-                                          Padding(
-                                            padding: const EdgeInsets.only(top: 1),
-                                            child: Text(
-                                              item.sku!,
-                                              style: theme.textTheme.labelSmall?.copyWith(
-                                                color: theme.colorScheme.outline,
-                                                fontSize: 10,
-                                              ),
-                                            ),
-                                          )
-                                        else
-                                          const SizedBox(height: 14),
-                                        const SizedBox(height: 4),
-
-                                        // Price & Quick Add Button Row
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          children: [
-                                            Text(
-                                              item.formattedPrice,
-                                              style: theme.textTheme.titleMedium?.copyWith(
-                                                fontWeight: FontWeight.w800,
-                                                color: item.isAvailable ? theme.colorScheme.primary : Colors.grey,
-                                                fontSize: 15,
-                                              ),
-                                            ),
-                                            Container(
-                                              padding: const EdgeInsets.all(5),
-                                              decoration: BoxDecoration(
-                                                color: item.isAvailable
-                                                    ? theme.colorScheme.primary.withOpacity(0.12)
-                                                    : Colors.grey.withOpacity(0.12),
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: Icon(
-                                                item.isAvailable ? Icons.add_rounded : Icons.block_rounded,
-                                                size: 18,
-                                                color: item.isAvailable ? theme.colorScheme.primary : Colors.grey,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           );
                         },
-                    ),
-                  ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(12, 6, 12, 90),
+                        itemCount: dishes.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final item = dishes[index];
+                          final cartLine = posProvider.cart.where((l) => l.item.id == item.id).firstOrNull;
+
+                          return RepaintBoundary(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: item.isAvailable
+                                    ? theme.colorScheme.surface
+                                    : theme.colorScheme.surfaceContainerHigh.withOpacity(0.4),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: cartLine != null
+                                      ? theme.colorScheme.primary
+                                      : (item.isAvailable
+                                          ? theme.colorScheme.outlineVariant.withOpacity(0.4)
+                                          : Colors.red.withOpacity(0.3)),
+                                  width: cartLine != null ? 1.5 : 1,
+                                ),
+                              ),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () {
+                                  if (item.isAvailable) {
+                                    posProvider.addToCart(item);
+                                    NativeApiChannel.triggerNativeHaptic();
+                                  } else {
+                                    NativeApiChannel.triggerNativeHaptic();
+                                    menuProvider.toggleItemAvailability(item.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('✓ ${item.name} activated'),
+                                        backgroundColor: CulinaryColors.emeraldGreen,
+                                        duration: const Duration(seconds: 2),
+                                      ),
+                                    );
+                                  }
+                                },
+                                onLongPress: () => _showAddEditDishDialog(context, item),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8),
+                                  child: Row(
+                                    children: [
+                                      // Dish Thumbnail
+                                      Stack(
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(10),
+                                            child: buildDishImage(
+                                              item.imageUri,
+                                              height: 64,
+                                              width: 64,
+                                              fit: BoxFit.cover,
+                                              cacheWidth: 160,
+                                            ),
+                                          ),
+                                          Positioned(
+                                            top: 4,
+                                            left: 4,
+                                            child: Container(
+                                              padding: const EdgeInsets.all(2),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: DietaryBadge(type: item.dietaryType, size: 10),
+                                            ),
+                                          ),
+                                          if (!item.isAvailable)
+                                            Positioned.fill(
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  color: Colors.black.withOpacity(0.5),
+                                                  borderRadius: BorderRadius.circular(10),
+                                                ),
+                                                alignment: Alignment.center,
+                                                child: const Icon(Icons.block_rounded, color: Colors.white, size: 22),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(width: 12),
+
+                                      // Details
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    item.name,
+                                                    style: theme.textTheme.titleSmall?.copyWith(
+                                                      fontWeight: FontWeight.w700,
+                                                      decoration: item.isAvailable ? null : TextDecoration.lineThrough,
+                                                    ),
+                                                  ),
+                                                ),
+                                                if (item.isTopSelling) ...[
+                                                  const SizedBox(width: 4),
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFFF59E0B),
+                                                      borderRadius: BorderRadius.circular(6),
+                                                    ),
+                                                    child: const Row(
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      children: [
+                                                        Icon(Icons.star_rounded, color: Colors.white, size: 10),
+                                                        SizedBox(width: 2),
+                                                        Text(
+                                                          'Best',
+                                                          style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 9,
+                                                            fontWeight: FontWeight.w800,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  item.formattedPrice,
+                                                  style: theme.textTheme.titleSmall?.copyWith(
+                                                    fontWeight: FontWeight.w800,
+                                                    color: item.isAvailable ? CulinaryColors.flameOrange : Colors.grey,
+                                                  ),
+                                                ),
+                                                if (cartLine != null) ...[
+                                                  const SizedBox(width: 8),
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                                    decoration: BoxDecoration(
+                                                      color: theme.colorScheme.primary,
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                    child: Text(
+                                                      '${cartLine.quantity} in cart',
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 10,
+                                                        fontWeight: FontWeight.w800,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
+                                      // Quick Add or Action button
+                                      if (item.isAvailable && cartLine != null && cartLine.quantity > 0)
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            IconButton(
+                                              icon: Icon(Icons.remove_circle_outline_rounded, color: theme.colorScheme.primary, size: 24),
+                                              padding: EdgeInsets.zero,
+                                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                              onPressed: () {
+                                                NativeApiChannel.triggerNativeHaptic();
+                                                posProvider.decrementQuantity(item.id);
+                                              },
+                                            ),
+                                            Text(
+                                              '${cartLine.quantity}',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: 14,
+                                                color: theme.colorScheme.primary,
+                                              ),
+                                            ),
+                                            IconButton(
+                                              icon: Icon(Icons.add_circle_rounded, color: theme.colorScheme.primary, size: 24),
+                                              padding: EdgeInsets.zero,
+                                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                              onPressed: () {
+                                                NativeApiChannel.triggerNativeHaptic();
+                                                posProvider.addToCart(item);
+                                              },
+                                            ),
+                                          ],
+                                        )
+                                      else
+                                        IconButton(
+                                          icon: Icon(
+                                            item.isAvailable ? Icons.add_circle_rounded : Icons.more_vert_rounded,
+                                            color: item.isAvailable ? theme.colorScheme.primary : Colors.grey,
+                                            size: 26,
+                                          ),
+                                          onPressed: () {
+                                            if (item.isAvailable) {
+                                              posProvider.addToCart(item);
+                                              NativeApiChannel.triggerNativeHaptic();
+                                            } else {
+                                              _showAddEditDishDialog(context, item);
+                                            }
+                                          },
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
           ),
         ],
       ),
-      // Floating Bottom Cart Bar
+      // Floating Bottom Cart Bar (Positioned cleanly above the bottom navigation bar)
       bottomSheet: posProvider.cart.isNotEmpty
-          ? Material(
-              elevation: 12,
-              color: theme.colorScheme.surfaceContainerLowest,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(
-                      color: theme.colorScheme.outlineVariant.withOpacity(0.4),
-                    ),
-                  ),
+          ? Container(
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 92),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withOpacity(0.35),
+                  width: 1.5,
                 ),
-                child: SafeArea(
-                  child: Row(
-                  children: [
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${posProvider.totalItemCount} Items in Cart',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.outline,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          CurrencyFormatter.formatRupees(posProvider.totalRupees),
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    BouncingButton(
-                      onPressed: () => _openCartBottomSheet(context),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 18),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Review & Pay',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.18),
+                    blurRadius: 18,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${posProvider.totalItemCount} Items in Cart',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.outline,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 11,
                         ),
                       ),
+                      Text(
+                        CurrencyFormatter.formatRupees(posProvider.totalRupees),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: theme.colorScheme.primary,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  BouncingButton(
+                    onPressed: () => _openCartBottomSheet(context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [CulinaryColors.flameOrange, CulinaryColors.tandoorSpice],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: CulinaryColors.flameOrange.withOpacity(0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Review & Pay',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ),
-          )
-        : null,
+            )
+          : null,
     );
   }
 }

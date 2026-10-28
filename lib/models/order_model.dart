@@ -19,6 +19,24 @@ class OrderItem {
 
   int get lineTotalPaise => unitPricePaise * quantity;
   double get lineTotalRupees => lineTotalPaise / 100.0;
+
+  Map<String, dynamic> toMap() {
+    return {
+      'menu_item': menuItem.toMap(),
+      'quantity': quantity,
+      'unit_price_paise': unitPricePaise,
+      'notes': notes,
+    };
+  }
+
+  factory OrderItem.fromMap(Map<String, dynamic> map) {
+    return OrderItem(
+      menuItem: MenuItem.fromMap(map['menu_item'] as Map<String, dynamic>),
+      quantity: (map['quantity'] as int?) ?? 1,
+      unitPricePaise: (map['unit_price_paise'] as int?) ?? 0,
+      notes: map['notes'] as String?,
+    );
+  }
 }
 
 class Order {
@@ -131,4 +149,76 @@ class Order {
       customerPhone: customerPhone ?? this.customerPhone,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'order_number': orderNumber,
+      'type': type.name,
+      'table_id': tableId,
+      'table_name': tableName,
+      'status': status.name,
+      'items': items.map((i) => i.toMap()).toList(),
+      'subtotal_paise': subtotalPaise,
+      'tax_bps': taxBps,
+      'discount_paise': discountPaise,
+      'round_off_paise': roundOffPaise,
+      'is_tax_inclusive': isTaxInclusive,
+      'created_at': createdAt.toIso8601String(),
+      'completed_at': completedAt?.toIso8601String(),
+      'payment_method': paymentMethod?.name,
+      'customer_phone': customerPhone,
+    };
+  }
+
+  factory Order.fromMap(Map<String, dynamic> map) {
+    OrderType parseType(String? name) {
+      for (final t in OrderType.values) {
+        if (t.name == name) return t;
+      }
+      return OrderType.dineIn;
+    }
+
+    OrderStatus parseStatus(String? name) {
+      for (final s in OrderStatus.values) {
+        if (s.name == name) return s;
+      }
+      return OrderStatus.paid;
+    }
+
+    PaymentMethod? parsePayment(String? name) {
+      if (name == null) return null;
+      for (final p in PaymentMethod.values) {
+        if (p.name == name) return p;
+      }
+      return null;
+    }
+
+    final rawItems = map['items'] as List<dynamic>? ?? [];
+    final itemsList = rawItems
+        .map((itemMap) => OrderItem.fromMap(itemMap as Map<String, dynamic>))
+        .toList();
+
+    return Order(
+      id: map['id'] as String,
+      orderNumber: map['order_number'] as String,
+      type: parseType(map['type'] as String?),
+      tableId: map['table_id'] as int?,
+      tableName: map['table_name'] as String?,
+      status: parseStatus(map['status'] as String?),
+      items: itemsList,
+      subtotalPaise: (map['subtotal_paise'] as int?) ?? 0,
+      taxBps: (map['tax_bps'] as int?) ?? 500,
+      discountPaise: (map['discount_paise'] as int?) ?? 0,
+      roundOffPaise: (map['round_off_paise'] as int?) ?? 0,
+      isTaxInclusive: (map['is_tax_inclusive'] as bool?) ?? false,
+      createdAt: DateTime.tryParse(map['created_at'] as String? ?? '') ?? DateTime.now(),
+      completedAt: map['completed_at'] != null
+          ? DateTime.tryParse(map['completed_at'] as String)
+          : null,
+      paymentMethod: parsePayment(map['payment_method'] as String?),
+      customerPhone: map['customer_phone'] as String?,
+    );
+  }
 }
+

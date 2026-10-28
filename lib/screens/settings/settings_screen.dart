@@ -12,6 +12,8 @@ import '../../services/backup_restore_service.dart';
 import '../reports/sales_report_screen.dart';
 import '../setup/setup_wizard_screen.dart';
 import 'wifi_debugging_guide_screen.dart';
+import '../../widgets/developer_support_section.dart';
+import '../../widgets/thermal_slip_preview_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -55,29 +57,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await NativeApiChannel.triggerNativeHaptic();
 
     final sample = '''
-    ================================
-         TEST RECEIPT - ESC/POS
-         ${profile.name.toUpperCase()}
-       ${profile.tagline}
-    --------------------------------
-    FSSAI Lic: ${profile.fssai}
-    GSTIN: ${profile.isGstEnabled ? profile.gstin : "Non-GST / Exempt"}
-    Round-Off: ${profile.isRoundOffEnabled ? "ENABLED" : "DISABLED"}
-    Date: ${DateTime.now().toString().split('.')[0]}
-    Printer: Thermal 58mm / 80mm
-    Status: CONNECTED & READY
-    ================================
-    ''';
-    await NativeApiChannel.printReceiptNative(receiptText: sample);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Test print dispatched to native Android printer service!'),
-          backgroundColor: CulinaryColors.emeraldGreen,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
+================================
+     TEST RECEIPT - ESC/POS
+     ${profile.name.toUpperCase()}
+   ${profile.tagline}
+   ${profile.address}
+   Ph: ${profile.phone}
+--------------------------------
+FSSAI Lic: ${profile.fssai.isNotEmpty ? profile.fssai : "11223344556677"}
+GSTIN: ${profile.isGstEnabled ? profile.gstin : "Non-GST / Exempt"}
+Round-Off: ${profile.isRoundOffEnabled ? "ENABLED" : "DISABLED"}
+Date: ${DateTime.now().toString().split('.')[0]}
+Printer: Thermal 58mm / 80mm
+Status: CONNECTED & READY
+================================
+''';
+
+    if (!mounted) return;
+    await ThermalSlipPreviewDialog.show(
+      context,
+      profile: profile,
+      customReceiptText: sample,
+      title: 'Test Receipt Preview',
+    );
   }
 
   void _editFssaiDialog(BuildContext context, PosProvider pos) {
@@ -726,6 +728,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ),
+
+          const SizedBox(height: 20),
+
+          // Developer Support & GitHub Open Source Section
+          const DeveloperSupportSection(),
 
           const SizedBox(height: 40),
         ],

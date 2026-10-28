@@ -131,17 +131,22 @@ class OrderProvider extends ChangeNotifier {
         o.createdAt.year == now.year &&
         o.createdAt.month == now.month &&
         o.createdAt.day == now.day);
-    final count = todayOrders.fold<int>(0, (sum, o) => sum + o.items.fold<int>(0, (s, i) => s + i.quantity));
-    // If fewer demo orders are completed, provide a realistic baseline floor of 48 items
-    return count > 0 ? count + 35 : 48;
+    return todayOrders.fold<int>(0, (sum, o) => sum + o.items.fold<int>(0, (s, i) => s + i.quantity));
   }
 
   int get itemsSoldThisWeek {
-    return (itemsSoldToday * 6.5).round();
+    final now = DateTime.now();
+    final sevenDaysAgo = now.subtract(const Duration(days: 7));
+    final weekOrders = completedOrders.where((o) => o.createdAt.isAfter(sevenDaysAgo));
+    return weekOrders.fold<int>(0, (sum, o) => sum + o.items.fold<int>(0, (s, i) => s + i.quantity));
   }
 
   int get itemsSoldThisMonth {
-    return (itemsSoldToday * 28.2).round();
+    final now = DateTime.now();
+    final monthOrders = completedOrders.where((o) =>
+        o.createdAt.year == now.year &&
+        o.createdAt.month == now.month);
+    return monthOrders.fold<int>(0, (sum, o) => sum + o.items.fold<int>(0, (s, i) => s + i.quantity));
   }
 
   Map<PaymentMethod, double> get paymentDistribution {
@@ -183,4 +188,11 @@ class OrderProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void replaceAllOrders(List<Order> newOrders) {
+    _orders.clear();
+    _orders.addAll(newOrders);
+    notifyListeners();
+  }
 }
+

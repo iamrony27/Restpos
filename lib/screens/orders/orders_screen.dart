@@ -6,7 +6,9 @@ import '../../core/channels/native_api_channel.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../models/order_model.dart';
 import '../../providers/order_provider.dart';
+import '../../providers/pos_provider.dart';
 import '../../providers/table_provider.dart';
+import '../../widgets/thermal_slip_preview_dialog.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -92,19 +94,18 @@ class _OrdersScreenState extends State<OrdersScreen> {
           ),
         ),
         actions: [
-          // Print KOT
+          // Preview & Print KOT / Bill
           OutlinedButton.icon(
-            icon: const Icon(Icons.print_rounded, size: 16),
-            label: const Text('Reprint KOT / Bill'),
-            onPressed: () async {
-              await NativeApiChannel.printReceiptNative(
-                receiptText: 'ORDER #${order.orderNumber}\n${order.items.map((i) => '${i.quantity}x ${i.menuItem.name}').join('\n')}',
+            icon: const Icon(Icons.receipt_long_rounded, size: 16),
+            label: const Text('Preview & Print Bill'),
+            onPressed: () {
+              final posProvider = Provider.of<PosProvider>(ctx, listen: false);
+              ThermalSlipPreviewDialog.show(
+                ctx,
+                order: order,
+                profile: posProvider.profile,
+                title: 'Order #${order.orderNumber} Slip',
               );
-              if (ctx.mounted) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('Dispatched to thermal printer!')),
-                );
-              }
             },
           ),
           if (order.status == OrderStatus.open || order.status == OrderStatus.billed) ...[

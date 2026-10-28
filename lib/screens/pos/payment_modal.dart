@@ -5,6 +5,7 @@ import '../../core/channels/native_api_channel.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../models/order_model.dart';
 import '../../providers/pos_provider.dart';
+import '../../widgets/thermal_slip_preview_dialog.dart';
 import '../../widgets/upi_qr_widget.dart';
 
 class PaymentModal extends StatefulWidget {
@@ -24,7 +25,6 @@ class PaymentModal extends StatefulWidget {
 class _PaymentModalState extends State<PaymentModal> {
   PaymentMethod _selectedMethod = PaymentMethod.upi;
   double _cashTendered = 0;
-  bool _isProcessing = false;
 
   @override
   void initState() {
@@ -39,56 +39,30 @@ class _PaymentModalState extends State<PaymentModal> {
     });
   }
 
-  Future<void> _completePayment() async {
-    setState(() => _isProcessing = true);
+  void _showThermalSlipPreview({bool autoConfirmOnPrint = true}) {
     final posProvider = Provider.of<PosProvider>(context, listen: false);
-    final profile = posProvider.profile;
+    final totalRupees = widget.order.totalRupees;
+    final changeDue = (_cashTendered - totalRupees).clamp(0, double.infinity).toDouble();
 
-    final taxTreatment = widget.order.isTaxInclusive ? 'Incl. in Price' : 'Added at checkout';
-    final gstLine = widget.order.taxBps > 0
-        ? 'GST (${(widget.order.taxBps / 100).toStringAsFixed(1)}% - $taxTreatment): ₹${widget.order.taxRupees.toStringAsFixed(2)}\n    (CGST: ₹${widget.order.cgstRupees.toStringAsFixed(2)} + SGST: ₹${widget.order.sgstRupees.toStringAsFixed(2)})'
-        : 'Tax: ₹0.00 (Non-GST / Exempt)';
+    ThermalSlipPreviewDialog.show(
+      context,
+      order: widget.order,
+      profile: posProvider.profile,
+      paymentMethod: _selectedMethod,
+      cashTendered: _cashTendered,
+      changeDue: changeDue,
+      onPrintConfirmed: () {
+        if (autoConfirmOnPrint && mounted) {
+          widget.onPaymentConfirmed();
+          Navigator.of(context).pop();
+        }
+      },
+    );
+  }
 
-    final roundOffLine = widget.order.roundOffPaise != 0
-        ? 'Round Off: ${widget.order.roundOffPaise > 0 ? "+" : ""}₹${widget.order.roundOffRupees.toStringAsFixed(2)}\n'
-        : '';
-
-    // Call native Android thermal print hook
-    final receiptPayload = '''
-    ================================
-         ${profile.name.toUpperCase()}
-       ${profile.tagline}
-       Ph: ${profile.phone}
-    --------------------------------
-    FSSAI Lic: ${profile.fssai.isNotEmpty ? profile.fssai : "11223344556677"}
-    GSTIN: ${profile.isGstEnabled ? profile.gstin : "Exempt / Non-GST"}
-    Order #${widget.order.orderNumber}
-    ${widget.order.type == OrderType.dineIn ? widget.order.tableName ?? 'Dine-In' : 'Takeaway'}
-    --------------------------------
-    ${widget.order.items.map((i) => '${i.quantity}x ${i.menuItem.name} - ₹${i.lineTotalRupees.toStringAsFixed(0)}').join('\n')}
-    --------------------------------
-    Subtotal: ₹${widget.order.subtotalRupees.toStringAsFixed(2)}
-    $gstLine
-    ${roundOffLine}GRAND TOTAL: ₹${widget.order.totalRupees.toStringAsFixed(0)}
-    Payment Mode: ${_selectedMethod.name.toUpperCase()}
-    ================================
-         Thank You! Visit Again.
-    ''';
-
-    await NativeApiChannel.printReceiptNative(receiptText: receiptPayload);
-    await NativeApiChannel.triggerNativeHaptic(type: 'click');
-
-    if (mounted) {
-      widget.onPaymentConfirmed();
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Payment confirmed! Thermal receipt printed for ${widget.order.orderNumber}'),
-          backgroundColor: const Color(0xFF16A34A),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
+  Future<void> _completePayment() async {
+    // Show preview of thermal slip before print as requested
+    _showThermalSlipPreview(autoConfirmOnPrint: true);
   }
 
   @override
@@ -255,29 +229,36 @@ class _PaymentModalState extends State<PaymentModal> {
 
             const SizedBox(height: 24),
 
-            // Confirm & Print Button
-            BouncingButton(
-              onPressed: _isProcessing ? null : _completePayment,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
-                  borderRadius: BorderRadius.circular(16),
+            // Action Buttons: Preview Slip & Confirm/Print
+            Row(
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () => _showThermalSlipPreview(autoConfirmOnPrint: false),
+                  icon: const Icon(Icons.receipt_long_rounded, size: 18),
+                  label: const Text('Preview Slip'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
                 ),
-                alignment: Alignment.center,
-                child: _isProcessing
-                    ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                      )
-                    : Row(
+                const SizedBox(width: 10),
+                Expanded(
+                  child: BouncingButton(
+                    onPressed: _completePayment,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      alignment: Alignment.center,
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Icon(Icons.print_rounded, color: Colors.white, size: 20),
                           const SizedBox(width: 8),
                           Text(
-                            'Confirm & Print Receipt (ESC/POS)',
+                            'Confirm & Print Receipt',
                             style: theme.textTheme.titleMedium?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
@@ -285,7 +266,10 @@ class _PaymentModalState extends State<PaymentModal> {
                           ),
                         ],
                       ),
-              ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
