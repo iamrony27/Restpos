@@ -9,6 +9,7 @@ import 'package:flutter_restaurant_pos/widgets/thermal_slip_preview_dialog.dart'
 import 'package:flutter_restaurant_pos/core/utils/app_notification.dart';
 import 'package:flutter_restaurant_pos/models/table_model.dart';
 import 'package:flutter_restaurant_pos/providers/table_provider.dart';
+import 'package:flutter_restaurant_pos/providers/order_provider.dart';
 import 'package:provider/provider.dart';
 
 
@@ -230,5 +231,51 @@ void main() {
     expect(tableProvider.tables.length, equals(initialCount));
     expect(tableProvider.getTableById(addedTable.id), isNull);
   });
+
+  test('OrderProvider supports edit, delete, and restore order with table sync', () {
+    final orderProvider = OrderProvider();
+    final tableProvider = TableProvider();
+
+    // Pick an active dine-in order
+    final activeOrder = orderProvider.activeOrders.first;
+    final orderId = activeOrder.id;
+
+    // 1. Test Edit Order
+    final updatedItems = [
+      activeOrder.items.first.copyWith(quantity: activeOrder.items.first.quantity + 2),
+    ];
+    orderProvider.editOrder(
+      orderId,
+      items: updatedItems,
+      tableProvider: tableProvider,
+    );
+
+    final editedOrder = orderProvider.orders.firstWhere((o) => o.id == orderId);
+    expect(editedOrder.isEdited, isTrue);
+    expect(editedOrder.editedAt, isNotNull);
+    expect(editedOrder.items.first.quantity, equals(updatedItems.first.quantity));
+
+    // 2. Test Delete Order
+    final initialActiveCount = orderProvider.activeOrders.length;
+    final initialDeletedCount = orderProvider.deletedOrders.length;
+
+    orderProvider.deleteOrder(orderId, tableProvider: tableProvider);
+
+    // Should no longer be in activeOrders or standard orders list
+    expect(orderProvider.orders.any((o) => o.id == orderId), isFalse);
+    expect(orderProvider.activeOrders.length, equals(initialActiveCount - 1));
+    expect(orderProvider.deletedOrders.length, equals(initialDeletedCount + 1));
+
+    final deletedOrder = orderProvider.deletedOrders.firstWhere((o) => o.id == orderId);
+    expect(deletedOrder.isDeleted, isTrue);
+    expect(deletedOrder.deletedAt, isNotNull);
+    expect(deletedOrder.status, equals(OrderStatus.cancelled));
+
+    // 3. Test Restore Order
+    orderProvider.restoreOrder(orderId);
+    expect(orderProvider.orders.any((o) => o.id == orderId), isTrue);
+    expect(orderProvider.deletedOrders.any((o) => o.id == orderId), isFalse);
+  });
 }
+
 

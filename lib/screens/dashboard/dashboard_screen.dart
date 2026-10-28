@@ -420,7 +420,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final Map<String, double> dishRevenue = {};
 
     for (final order in orderProvider.orders) {
-      if (order.status == OrderStatus.cancelled) continue;
+      if (order.status == OrderStatus.cancelled || order.isDeleted) continue;
       for (final item in order.items) {
         final name = item.menuItem.name;
         dishQuantities[name] = (dishQuantities[name] ?? 0) + item.quantity;

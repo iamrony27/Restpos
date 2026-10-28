@@ -20,6 +20,20 @@ class OrderItem {
   int get lineTotalPaise => unitPricePaise * quantity;
   double get lineTotalRupees => lineTotalPaise / 100.0;
 
+  OrderItem copyWith({
+    MenuItem? menuItem,
+    int? quantity,
+    int? unitPricePaise,
+    String? notes,
+  }) {
+    return OrderItem(
+      menuItem: menuItem ?? this.menuItem,
+      quantity: quantity ?? this.quantity,
+      unitPricePaise: unitPricePaise ?? this.unitPricePaise,
+      notes: notes ?? this.notes,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'menu_item': menuItem.toMap(),
@@ -56,6 +70,10 @@ class Order {
   final DateTime? completedAt;
   final PaymentMethod? paymentMethod;
   final String? customerPhone;
+  final bool isEdited;
+  final DateTime? editedAt;
+  final bool isDeleted;
+  final DateTime? deletedAt;
 
   Order({
     required this.id,
@@ -74,6 +92,10 @@ class Order {
     this.completedAt,
     this.paymentMethod,
     this.customerPhone,
+    this.isEdited = false,
+    this.editedAt,
+    this.isDeleted = false,
+    this.deletedAt,
   });
 
   int get taxableBasePaise {
@@ -129,6 +151,10 @@ class Order {
     DateTime? completedAt,
     PaymentMethod? paymentMethod,
     String? customerPhone,
+    bool? isEdited,
+    DateTime? editedAt,
+    bool? isDeleted,
+    DateTime? deletedAt,
   }) {
     return Order(
       id: id ?? this.id,
@@ -147,6 +173,10 @@ class Order {
       completedAt: completedAt ?? this.completedAt,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       customerPhone: customerPhone ?? this.customerPhone,
+      isEdited: isEdited ?? this.isEdited,
+      editedAt: editedAt ?? this.editedAt,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: deletedAt ?? this.deletedAt,
     );
   }
 
@@ -168,6 +198,10 @@ class Order {
       'completed_at': completedAt?.toIso8601String(),
       'payment_method': paymentMethod?.name,
       'customer_phone': customerPhone,
+      'is_edited': isEdited,
+      'edited_at': editedAt?.toIso8601String(),
+      'is_deleted': isDeleted,
+      'deleted_at': deletedAt?.toIso8601String(),
     };
   }
 
@@ -218,6 +252,10 @@ class Order {
           : null,
       paymentMethod: parsePayment(map['payment_method'] as String?),
       customerPhone: map['customer_phone'] as String?,
+      isEdited: (map['is_edited'] as bool?) ?? false,
+      editedAt: map['edited_at'] != null ? DateTime.tryParse(map['edited_at'] as String) : null,
+      isDeleted: (map['is_deleted'] as bool?) ?? false,
+      deletedAt: map['deleted_at'] != null ? DateTime.tryParse(map['deleted_at'] as String) : null,
     );
   }
 }

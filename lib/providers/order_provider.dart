@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/menu_item.dart';
 import '../models/order_model.dart';
+import 'table_provider.dart';
 
 class OrderProvider extends ChangeNotifier {
   final List<Order> _orders = [
@@ -109,10 +110,12 @@ class OrderProvider extends ChangeNotifier {
     ),
   ];
 
-  List<Order> get orders => List.unmodifiable(_orders);
+  List<Order> get orders => List.unmodifiable(_orders.where((o) => !o.isDeleted).toList());
+  List<Order> get allOrdersIncludingDeleted => List.unmodifiable(_orders);
+  List<Order> get deletedOrders => List.unmodifiable(_orders.where((o) => o.isDeleted).toList());
 
-  List<Order> get activeOrders => _orders.where((o) => o.status == OrderStatus.open || o.status == OrderStatus.billed).toList();
-  List<Order> get completedOrders => _orders.where((o) => o.status == OrderStatus.paid || o.status == OrderStatus.completed).toList();
+  List<Order> get activeOrders => _orders.where((o) => !o.isDeleted && (o.status == OrderStatus.open || o.status == OrderStatus.billed)).toList();
+  List<Order> get completedOrders => _orders.where((o) => !o.isDeleted && (o.status == OrderStatus.paid || o.status == OrderStatus.completed)).toList();
 
   int get totalRevenuePaise => completedOrders.fold(0, (sum, o) => sum + o.totalPaise);
   double get totalRevenueRupees => totalRevenuePaise / 100.0;
@@ -185,6 +188,82 @@ class OrderProvider extends ChangeNotifier {
     final index = _orders.indexWhere((o) => o.id == orderId);
     if (index >= 0) {
       _orders[index] = _orders[index].copyWith(status: OrderStatus.cancelled);
+      notifyListeners();
+    }
+  }
+
+  void editOrder(
+    String orderId, {
+    required List<OrderItem> items,
+    int? discountPaise,
+    String? customerPhone,
+    OrderType? type,
+    int? tableId,
+    String? tableName,
+    TableProvider? tableProvider,
+  }) {
+    final index = _orders.indexWhere((o) => o.id == orderId);
+    if (index >= 0) {
+      final old = _orders[index];
+      final newSubtotal = items.fold<int>(0, (sum, i) => sum + i.lineTotalPaise);
+      final newDiscount = discountPaise ?? old.discountPaise;
+
+      final updated = old.copyWith(
+        items: items,
+        subtotalPaise: newSubtotal,
+        discountPaise: newDiscount,
+        customerPhone: customerPhone ?? old.customerPhone,
+        type: type ?? old.type,
+        tableId: tableId ?? old.tableId,
+        tableName: tableName ?? old.tableName,
+        isEdited: true,
+        editedAt: DateTime.now(),
+      );
+      _orders[index] = updated;
+
+      // Synchronize Table bill if order is linked to a table
+      if (updated.tableId != null && tableProvider != null) {
+        if (updated.status == OrderStatus.billed) {
+          tableProvider.markBilled(updated.tableId!, updated.totalPaise);
+        } else if (updated.status == OrderStatus.open) {
+          tableProvider.occupyTable(
+            updated.tableId!,
+            int.tryParse(updated.id) ?? 1,
+            updated.totalPaise,
+          );
+        }
+      }
+
+      notifyListeners();
+    }
+  }
+
+  void deleteOrder(String orderId, {TableProvider? tableProvider}) {
+    final index = _orders.indexWhere((o) => o.id == orderId);
+    if (index >= 0) {
+      final old = _orders[index];
+      _orders[index] = old.copyWith(
+        isDeleted: true,
+        deletedAt: DateTime.now(),
+        status: OrderStatus.cancelled,
+      );
+
+      // If active order on table, free the table immediately
+      if (old.tableId != null && tableProvider != null) {
+        tableProvider.freeTable(old.tableId!);
+      }
+
+      notifyListeners();
+    }
+  }
+
+  void restoreOrder(String orderId) {
+    final index = _orders.indexWhere((o) => o.id == orderId);
+    if (index >= 0) {
+      _orders[index] = _orders[index].copyWith(
+        isDeleted: false,
+        deletedAt: null,
+      );
       notifyListeners();
     }
   }
