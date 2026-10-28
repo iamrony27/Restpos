@@ -316,4 +316,28 @@ class MenuProvider extends ChangeNotifier {
     _items.removeWhere((it) => it.id == itemId);
     notifyListeners();
   }
+
+  void setCategories(List<MenuCategory> categories) {
+    _categories.clear();
+    _categories.addAll(categories);
+    notifyListeners();
+  }
+
+  void addCategory(MenuCategory category) {
+    _categories.add(category);
+    notifyListeners();
+  }
+
+  void deleteCategory(int categoryId) {
+    _categories.removeWhere((c) => c.id == categoryId);
+    notifyListeners();
+  }
+
+  void setItemAvailability(int itemId, bool isAvailable) {
+    final index = _items.indexWhere((it) => it.id == itemId);
+    if (index >= 0) {
+      _items[index] = _items[index].copyWith(isAvailable: isAvailable);
+      notifyListeners();
+    }
+  }
 }

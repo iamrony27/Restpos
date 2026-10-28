@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import '../../core/animations/bouncing_button.dart';
 import '../../core/channels/native_api_channel.dart';
 import '../../core/theme/color_schemes.dart';
+import '../../providers/menu_provider.dart';
 import '../../providers/pos_provider.dart';
+import '../../widgets/dietary_badge.dart';
 
 class SetupWizardScreen extends StatefulWidget {
   final bool isInitialSetup;
@@ -40,10 +42,16 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
   late bool _isRoundOffEnabled;
   late final TextEditingController _upiIdController;
 
+  // Step 4: Menu Categories & Dishes Selection
+  final Set<int> _selectedCategoryIds = {};
+  final Set<int> _selectedItemIds = {};
+  int _activeCategoryFilterId = 0;
+
   @override
   void initState() {
     super.initState();
     final pos = Provider.of<PosProvider>(context, listen: false);
+    final menu = Provider.of<MenuProvider>(context, listen: false);
     final p = pos.profile;
 
     _nameController = TextEditingController(text: p.name);
@@ -61,6 +69,13 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
 
     _isRoundOffEnabled = p.isRoundOffEnabled;
     _upiIdController = TextEditingController(text: p.upiId);
+
+    // Initialize all existing categories and items as selected by default
+    _selectedCategoryIds.addAll(menu.categories.map((c) => c.id));
+    _selectedItemIds.addAll(menu.items.where((i) => i.isAvailable).map((i) => i.id));
+    if (menu.categories.isNotEmpty) {
+      _activeCategoryFilterId = menu.categories.first.id;
+    }
   }
 
   @override
@@ -80,7 +95,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
 
   void _nextStep() {
     NativeApiChannel.triggerNativeHaptic();
-    if (_currentStep < 3) {
+    if (_currentStep < 4) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 320),
         curve: Curves.easeOutCubic,
@@ -105,6 +120,15 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
   void _finishSetup() {
     NativeApiChannel.triggerNativeHaptic();
     final pos = Provider.of<PosProvider>(context, listen: false);
+    final menu = Provider.of<MenuProvider>(context, listen: false);
+
+    // Apply category & item selections
+    for (final item in menu.items) {
+      final shouldBeAvailable = _selectedItemIds.contains(item.id) &&
+          _selectedCategoryIds.contains(item.categoryId);
+      menu.setItemAvailability(item.id, shouldBeAvailable);
+    }
+
     final updatedProfile = pos.profile.copyWith(
       name: _nameController.text.trim().isEmpty ? 'Spice Garden Restaurant' : _nameController.text.trim(),
       tagline: _taglineController.text.trim().isEmpty ? 'Authentic Tandoor & Dining' : _taglineController.text.trim(),
@@ -160,24 +184,26 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Stepper Indicator Header
+            // Stepper Indicator Header (5 Steps)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
               child: Row(
                 children: [
                   _buildStepIndicator(0, 'Profile', Icons.storefront_rounded),
                   _buildStepDivider(0),
-                  _buildStepIndicator(1, 'Tax & FSSAI', Icons.receipt_long_rounded),
+                  _buildStepIndicator(1, 'Tax/FSSAI', Icons.receipt_long_rounded),
                   _buildStepDivider(1),
                   _buildStepIndicator(2, 'Billing', Icons.account_balance_wallet_rounded),
                   _buildStepDivider(2),
-                  _buildStepIndicator(3, 'Review', Icons.task_alt_rounded),
+                  _buildStepIndicator(3, 'Menu', Icons.restaurant_menu_rounded),
+                  _buildStepDivider(3),
+                  _buildStepIndicator(4, 'Review', Icons.task_alt_rounded),
                 ],
               ),
             ),
 
-            // Page View
+            // Page View (5 Pages)
             Expanded(
               child: PageView(
                 controller: _pageController,
@@ -186,7 +212,8 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                   _buildStep1Profile(theme),
                   _buildStep2TaxAndFssai(theme),
                   _buildStep3Billing(theme),
-                  _buildStep4Review(theme),
+                  _buildStep4MenuSelection(theme),
+                  _buildStep5Review(theme),
                 ],
               ),
             ),
@@ -240,7 +267,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                         ),
                         alignment: Alignment.center,
                         child: Text(
-                          _currentStep == 3 ? 'Save & Start Billing 🚀' : 'Continue Step ${_currentStep + 2} →',
+                          _currentStep == 4 ? 'Save & Start Billing 🚀' : 'Continue Step ${_currentStep + 2} →',
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
@@ -805,8 +832,216 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
     );
   }
 
-  // STEP 4: Review & Confirm
-  Widget _buildStep4Review(ThemeData theme) {
+  // STEP 4: Menu Categories & Dishes Selection
+  Widget _buildStep4MenuSelection(ThemeData theme) {
+    final menu = Provider.of<MenuProvider>(context);
+
+    final filteredDishes = menu.items.where((i) {
+      if (_activeCategoryFilterId == 0) return true;
+      return i.categoryId == _activeCategoryFilterId;
+    }).toList();
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: CulinaryColors.flameOrange.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.restaurant_menu_rounded, color: CulinaryColors.flameOrange, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Choose Categories & Dishes', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                        Text('Select what categories and items to enable initially', style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey.shade600)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              // Categories Filter & Toggle Chips
+              const Text('Active Categories:', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 42,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: FilterChip(
+                        label: Text('All (${menu.categories.length})'),
+                        selected: _activeCategoryFilterId == 0,
+                        onSelected: (val) {
+                          setState(() => _activeCategoryFilterId = 0);
+                        },
+                      ),
+                    ),
+                    ...menu.categories.map((c) {
+                      final isCategoryEnabled = _selectedCategoryIds.contains(c.id);
+                      final isFiltering = _activeCategoryFilterId == c.id;
+
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: FilterChip(
+                          avatar: Icon(
+                            isCategoryEnabled ? Icons.check_circle_rounded : Icons.cancel_outlined,
+                            size: 16,
+                            color: isCategoryEnabled ? CulinaryColors.emeraldGreen : Colors.grey,
+                          ),
+                          label: Text(c.name),
+                          selected: isFiltering,
+                          selectedColor: theme.colorScheme.primary.withOpacity(0.15),
+                          onSelected: (val) {
+                            setState(() => _activeCategoryFilterId = c.id);
+                          },
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 8),
+              // Category master enable/disable switch
+              if (_activeCategoryFilterId != 0) ...[
+                Builder(
+                  builder: (ctx) {
+                    final currentCat = menu.categories.firstWhere((c) => c.id == _activeCategoryFilterId);
+                    final isCatEnabled = _selectedCategoryIds.contains(currentCat.id);
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isCatEnabled ? Colors.green.withOpacity(0.08) : Colors.red.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Enable "${currentCat.name}" Category',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                              color: isCatEnabled ? Colors.green.shade800 : Colors.red.shade800,
+                            ),
+                          ),
+                          Switch.adaptive(
+                            value: isCatEnabled,
+                            activeColor: CulinaryColors.emeraldGreen,
+                            onChanged: (val) {
+                              setState(() {
+                                if (val) {
+                                  _selectedCategoryIds.add(currentCat.id);
+                                } else {
+                                  _selectedCategoryIds.remove(currentCat.id);
+                                }
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 6),
+              ],
+            ],
+          ),
+        ),
+
+        // Dishes List
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            itemCount: filteredDishes.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final dish = filteredDishes[index];
+              final isItemSelected = _selectedItemIds.contains(dish.id);
+              final isParentCategoryEnabled = _selectedCategoryIds.contains(dish.categoryId);
+
+              return CheckboxListTile(
+                value: isItemSelected && isParentCategoryEnabled,
+                enabled: isParentCategoryEnabled,
+                activeColor: CulinaryColors.emeraldGreen,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                secondary: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: dish.imageUri != null
+                      ? Image.asset(
+                          dish.imageUri!,
+                          width: 48,
+                          height: 48,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 48,
+                            height: 48,
+                            color: Colors.grey.shade200,
+                            child: const Icon(Icons.restaurant_rounded),
+                          ),
+                        )
+                      : Container(
+                          width: 48,
+                          height: 48,
+                          color: Colors.grey.shade200,
+                          child: const Icon(Icons.restaurant_rounded),
+                        ),
+                ),
+                title: Row(
+                  children: [
+                    DietaryBadge(type: dish.dietaryType, size: 12),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        dish.name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: isParentCategoryEnabled ? null : Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                subtitle: Text(
+                  '${dish.formattedPrice} • ${dish.sku ?? ""}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+                onChanged: isParentCategoryEnabled
+                    ? (val) {
+                        setState(() {
+                          if (val == true) {
+                            _selectedItemIds.add(dish.id);
+                          } else {
+                            _selectedItemIds.remove(dish.id);
+                          }
+                        });
+                      }
+                    : null,
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  // STEP 5: Review & Confirm
+  Widget _buildStep5Review(ThemeData theme) {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
@@ -860,6 +1095,8 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
                 _buildReviewRow('FSSAI Number', _fssaiController.text.isEmpty ? 'Not Provided' : _fssaiController.text),
                 _buildReviewRow('Round Off', _isRoundOffEnabled ? 'Enabled (Nearest ₹)' : 'Disabled'),
                 _buildReviewRow('UPI VPA', _upiIdController.text),
+                _buildReviewRow('Active Categories', '${_selectedCategoryIds.length} Categories Selected'),
+                _buildReviewRow('Active Dishes', '${_selectedItemIds.length} Dishes Enabled'),
                 _buildReviewRow('Contact Phone', _phoneController.text),
               ],
             ),
