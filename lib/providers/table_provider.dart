@@ -4,39 +4,15 @@ import '../models/table_model.dart';
 class TableProvider extends ChangeNotifier {
   final List<RestaurantTable> _tables = [
     const RestaurantTable(id: 1, name: 'Table 1', seatingCapacity: 2, status: TableStatus.available),
-    RestaurantTable(
-      id: 2,
-      name: 'Table 2',
-      seatingCapacity: 4,
-      status: TableStatus.occupied,
-      activeOrderId: 1001,
-      occupiedSince: DateTime.now().subtract(const Duration(minutes: 32)),
-      currentBillPaise: 84000,
-    ),
+    const RestaurantTable(id: 2, name: 'Table 2', seatingCapacity: 4, status: TableStatus.available),
     const RestaurantTable(id: 3, name: 'Table 3', seatingCapacity: 4, status: TableStatus.available),
-    RestaurantTable(
-      id: 4,
-      name: 'Table 4',
-      seatingCapacity: 6,
-      status: TableStatus.billed,
-      activeOrderId: 1002,
-      occupiedSince: DateTime.now().subtract(const Duration(minutes: 54)),
-      currentBillPaise: 165000,
-    ),
+    const RestaurantTable(id: 4, name: 'Table 4', seatingCapacity: 6, status: TableStatus.available),
     const RestaurantTable(id: 5, name: 'Table 5', seatingCapacity: 2, status: TableStatus.available),
     const RestaurantTable(id: 6, name: 'Table 6', seatingCapacity: 4, status: TableStatus.available),
-    RestaurantTable(
-      id: 7,
-      name: 'Table 7 (Booth)',
-      seatingCapacity: 6,
-      status: TableStatus.occupied,
-      activeOrderId: 1003,
-      occupiedSince: DateTime.now().subtract(const Duration(minutes: 18)),
-      currentBillPaise: 62000,
-    ),
+    const RestaurantTable(id: 7, name: 'Table 7 (Booth)', seatingCapacity: 6, status: TableStatus.available),
     const RestaurantTable(id: 8, name: 'Table 8 (Family)', seatingCapacity: 8, status: TableStatus.available),
     const RestaurantTable(id: 9, name: 'Table 9 (Rooftop)', seatingCapacity: 4, status: TableStatus.available),
-    const RestaurantTable(id: 10, name: 'Table 10 (Rooftop)', seatingCapacity: 4, status: TableStatus.reserved),
+    const RestaurantTable(id: 10, name: 'Table 10 (Rooftop)', seatingCapacity: 4, status: TableStatus.available),
   ];
 
   List<RestaurantTable> get tables => List.unmodifiable(_tables);

@@ -63,21 +63,21 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
     final menu = Provider.of<MenuProvider>(context, listen: false);
     final p = pos.profile;
 
-    _nameController = TextEditingController(text: p.name);
-    _taglineController = TextEditingController(text: p.tagline);
-    _legalNameController = TextEditingController(text: p.legalName);
-    _phoneController = TextEditingController(text: p.phone);
-    _emailController = TextEditingController(text: p.email);
-    _addressController = TextEditingController(text: p.address);
+    _nameController = TextEditingController(text: p.isSetupCompleted ? p.name : '');
+    _taglineController = TextEditingController(text: p.isSetupCompleted ? p.tagline : '');
+    _legalNameController = TextEditingController(text: p.isSetupCompleted ? p.legalName : '');
+    _phoneController = TextEditingController(text: p.isSetupCompleted ? p.phone : '');
+    _emailController = TextEditingController(text: p.isSetupCompleted ? p.email : '');
+    _addressController = TextEditingController(text: p.isSetupCompleted ? p.address : '');
 
     _isGstEnabled = p.isGstEnabled;
     _gstRatePercent = p.gstRatePercent;
-    _isTaxInclusive = p.isTaxInclusive;
-    _gstinController = TextEditingController(text: p.gstin);
-    _fssaiController = TextEditingController(text: p.fssai);
+    _isTaxInclusive = p.isSetupCompleted ? p.isTaxInclusive : true;
+    _gstinController = TextEditingController(text: p.isSetupCompleted ? p.gstin : '');
+    _fssaiController = TextEditingController(text: p.isSetupCompleted ? p.fssai : '');
 
     _isRoundOffEnabled = p.isRoundOffEnabled;
-    _upiIdController = TextEditingController(text: p.upiId);
+    _upiIdController = TextEditingController(text: p.isSetupCompleted ? p.upiId : '');
 
     // Initialize all existing categories and items as selected by default
     _selectedCategoryIds.addAll(menu.categories.map((c) => c.id));
@@ -155,8 +155,8 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
     }
 
     final updatedProfile = pos.profile.copyWith(
-      name: _nameController.text.trim().isEmpty ? 'Spice Garden Restaurant' : _nameController.text.trim(),
-      tagline: _taglineController.text.trim().isEmpty ? 'Authentic Tandoor & Dining' : _taglineController.text.trim(),
+      name: _nameController.text.trim().isEmpty ? 'Rest POS' : _nameController.text.trim(),
+      tagline: _taglineController.text.trim(),
       legalName: _legalNameController.text.trim(),
       phone: _phoneController.text.trim(),
       email: _emailController.text.trim(),

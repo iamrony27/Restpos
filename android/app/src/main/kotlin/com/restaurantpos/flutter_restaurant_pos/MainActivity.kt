@@ -91,17 +91,6 @@ class MainActivity : FlutterActivity() {
                     }
                 }
 
-                "openWifiSettings" -> {
-                    try {
-                        val intent = Intent(Settings.ACTION_WIFI_SETTINGS).apply {
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                        }
-                        startActivity(intent)
-                        result.success(true)
-                    } catch (e: Exception) {
-                        result.error("INTENT_FAILED", e.localizedMessage, null)
-                    }
-                }
 
                 "openBluetoothSettings" -> {
                     try {

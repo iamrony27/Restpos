@@ -32,7 +32,7 @@ void main() {
     SharedPreferences.setMockInitialValues({'is_setup_completed': true});
     await tester.pumpWidget(const RestaurantPosApp());
     await tester.pumpAndSettle();
-    expect(find.text('Spice Garden Restaurant'), findsOneWidget);
+    expect(find.text('Rest POS'), findsWidgets);
   });
 
   group('PosProvider GST & Round-Off Calculations', () {
@@ -41,6 +41,7 @@ void main() {
       pos.updateProfile(const RestaurantProfile(
         isGstEnabled: true,
         gstRatePercent: 5.0,
+        isTaxInclusive: false,
         isRoundOffEnabled: true,
       ));
 
@@ -249,6 +250,28 @@ void main() {
   test('OrderProvider supports edit, delete, and restore order with table sync', () {
     final orderProvider = OrderProvider();
     final tableProvider = TableProvider();
+
+    final testOrder = Order(
+      id: 'test-1001',
+      orderNumber: 'ORD-1001',
+      type: OrderType.dineIn,
+      tableId: 2,
+      tableName: 'Table 2',
+      status: OrderStatus.open,
+      items: [
+        OrderItem(
+          menuItem: const MenuItem(id: 301, categoryId: 3, name: 'Paneer Butter Masala', pricePaise: 31000),
+          quantity: 2,
+          unitPricePaise: 31000,
+        ),
+      ],
+      subtotalPaise: 62000,
+      taxBps: 500,
+      discountPaise: 0,
+      createdAt: DateTime.now(),
+    );
+    orderProvider.addOrder(testOrder);
+    tableProvider.occupyTable(2, 1001, 62000);
 
     // Pick an active dine-in order
     final activeOrder = orderProvider.activeOrders.first;

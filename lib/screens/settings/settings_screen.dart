@@ -11,7 +11,6 @@ import '../../providers/table_provider.dart';
 import '../../services/backup_restore_service.dart';
 import '../reports/sales_report_screen.dart';
 import '../setup/setup_wizard_screen.dart';
-import 'wifi_debugging_guide_screen.dart';
 import '../../widgets/developer_support_section.dart';
 import '../../widgets/thermal_slip_preview_dialog.dart';
 import '../../core/utils/app_notification.dart';
@@ -465,52 +464,7 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
             ),
           ),
 
-          const SizedBox(height: 16),
 
-          // Wi-Fi Debugging Guide Banner
-          BouncingButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                SmoothPageRoute(page: const WifiDebuggingGuideScreen()),
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    CulinaryColors.royalBlue,
-                    CulinaryColors.royalBlue.withOpacity(0.8),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.wifi_rounded, color: Colors.white, size: 26),
-                  SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Wi-Fi Debugging & Live UI Preview',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Connected to phone over wireless adb',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
-                ],
-              ),
-            ),
-          ),
 
           const SizedBox(height: 16),
 

@@ -21,8 +21,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.veg,
       sku: 'BEV-001',
       imageUri: 'assets/menu/beverages/masala-chai.webp',
-      isTopSelling: true,
-      salesCount: 142,
       description: 'Slow-brewed Assam CTC with fresh ginger, cardamom & aromatic spices.',
     ),
     const MenuItem(
@@ -33,7 +31,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.veg,
       sku: 'BEV-002',
       imageUri: 'assets/menu/beverages/filter-coffee.webp',
-      salesCount: 68,
       description: 'Traditional South Indian chicory decoction with frothy steamed milk.',
     ),
     const MenuItem(
@@ -44,8 +41,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.veg,
       sku: 'BEV-003',
       imageUri: 'assets/menu/beverages/mango-lassi.webp',
-      isTopSelling: true,
-      salesCount: 95,
       description: 'Thick creamy churned yogurt blended with sweet Alphonso mango pulp.',
     ),
     const MenuItem(
@@ -56,7 +51,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.veg,
       sku: 'BEV-004',
       imageUri: 'assets/menu/beverages/fresh-lime-soda.webp',
-      salesCount: 52,
       description: 'Crisp club soda with freshly squeezed lime, rock salt and mint.',
     ),
 
@@ -69,8 +63,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.veg,
       sku: 'APP-001',
       imageUri: 'assets/menu/starters/paneer-tikka.webp',
-      isTopSelling: true,
-      salesCount: 118,
       description: 'Char-grilled cottage cheese cubes marinated in mustard oil & Kashmiri chilli.',
     ),
     const MenuItem(
@@ -81,7 +73,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.veg,
       sku: 'APP-002',
       imageUri: 'assets/menu/starters/veg-spring-rolls.webp',
-      salesCount: 47,
       description: 'Golden fried wrappers stuffed with wok-tossed cabbage, carrots and glass noodles.',
     ),
     const MenuItem(
@@ -92,8 +83,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.nonVeg,
       sku: 'APP-003',
       imageUri: 'assets/menu/starters/chicken-65.webp',
-      isTopSelling: true,
-      salesCount: 104,
       description: 'Deep-fried spicy chicken morsels tempered with curry leaves and green chillies.',
     ),
     const MenuItem(
@@ -104,7 +93,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.nonVeg,
       sku: 'APP-004',
       imageUri: 'assets/menu/starters/tandoori-chicken.webp',
-      salesCount: 81,
       description: 'Classic clay-oven roasted chicken spiced with hung curd and garam masala.',
     ),
     const MenuItem(
@@ -115,7 +103,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.egg,
       sku: 'APP-005',
       imageUri: 'assets/menu/egg/egg-bhurji.webp',
-      salesCount: 39,
       description: 'Street-style spicy scrambled eggs cooked with chopped onions, tomatoes & cilantro.',
     ),
 
@@ -128,8 +115,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.veg,
       sku: 'MAIN-001',
       imageUri: 'assets/menu/vegetarian/paneer-butter-masala.webp',
-      isTopSelling: true,
-      salesCount: 135,
       description: 'Soft cottage cheese simmered in a velvety buttery tomato-cashew gravy.',
     ),
     const MenuItem(
@@ -140,7 +125,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.veg,
       sku: 'MAIN-002',
       imageUri: 'assets/menu/vegetarian/dal-makhani.webp',
-      salesCount: 77,
       description: 'Whole black lentils slow-cooked overnight with white butter and fresh cream.',
     ),
     const MenuItem(
@@ -151,8 +135,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.nonVeg,
       sku: 'MAIN-003',
       imageUri: 'assets/menu/chicken/butter-chicken.webp',
-      isTopSelling: true,
-      salesCount: 165,
       description: 'Tender tandoori chicken cooked in creamy fenugreek-infused makhani gravy.',
     ),
     const MenuItem(
@@ -163,7 +145,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.nonVeg,
       sku: 'MAIN-004',
       imageUri: 'assets/menu/mutton/mutton-rogan-josh.webp',
-      salesCount: 63,
       description: 'Kashmiri delicacy of tender braised mutton simmered with fennel and ratanjot.',
     ),
     const MenuItem(
@@ -174,7 +155,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.egg,
       sku: 'MAIN-005',
       imageUri: 'assets/menu/egg/egg-curry.webp',
-      salesCount: 42,
       description: 'Hard-boiled eggs simmered in a spiced onion-tomato gravy with roasted spices.',
     ),
 
@@ -187,8 +167,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.veg,
       sku: 'RICE-001',
       imageUri: 'assets/menu/indian-bread/butter-naan.webp',
-      isTopSelling: true,
-      salesCount: 189,
       description: 'Teardrop refined flour bread baked on tandoor walls, brushed with dairy butter.',
     ),
     const MenuItem(
@@ -199,7 +177,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.veg,
       sku: 'RICE-002',
       imageUri: 'assets/menu/indian-bread/garlic-naan.webp',
-      salesCount: 88,
       description: 'Crisp flatbread topped with minced roasted garlic and fresh coriander.',
     ),
     const MenuItem(
@@ -210,7 +187,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.veg,
       sku: 'RICE-003',
       imageUri: 'assets/menu/rice/jeera-rice.webp',
-      salesCount: 71,
       description: 'Long-grain aged basmati rice tempered with cumin seeds and pure desi ghee.',
     ),
     const MenuItem(
@@ -221,8 +197,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.nonVeg,
       sku: 'RICE-004',
       imageUri: 'assets/menu/biryani/chicken-biryani.webp',
-      isTopSelling: true,
-      salesCount: 198,
       description: 'Hyderabadi fragrant dum basmati layers sealed with saffron, kewra and succulent chicken.',
     ),
 
@@ -235,8 +209,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.veg,
       sku: 'DES-001',
       imageUri: 'assets/menu/desserts/gulab-jamun.webp',
-      isTopSelling: true,
-      salesCount: 110,
       description: 'Golden fried mawa dumplings soaked in cardamom-rose scented warm sugar syrup.',
     ),
     const MenuItem(
@@ -247,7 +219,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.veg,
       sku: 'DES-002',
       imageUri: 'assets/menu/desserts/rasmalai.webp',
-      salesCount: 65,
       description: 'Delicate flattened cottage cheese discs steeped in thickened saffron-pistachio rabri.',
     ),
     const MenuItem(
@@ -258,7 +229,6 @@ class MenuProvider extends ChangeNotifier {
       dietaryType: DietaryType.egg,
       sku: 'DES-003',
       imageUri: 'assets/menu/desserts/chocolate-brownie.webp',
-      salesCount: 54,
       description: 'Warm fudge brownie served on a smoking sizzler platter with vanilla bean ice cream.',
     ),
   ];
@@ -350,6 +320,26 @@ class MenuProvider extends ChangeNotifier {
       _items[index] = _items[index].copyWith(isAvailable: isAvailable);
       notifyListeners();
     }
+  }
+
+  void recordItemSale(int itemId, int quantity) {
+    final index = _items.indexWhere((it) => it.id == itemId);
+    if (index >= 0) {
+      final current = _items[index];
+      final newCount = current.salesCount + quantity;
+      _items[index] = current.copyWith(
+        salesCount: newCount,
+        isTopSelling: newCount >= 5,
+      );
+      notifyListeners();
+    }
+  }
+
+  void resetSalesCounts() {
+    for (int i = 0; i < _items.length; i++) {
+      _items[i] = _items[i].copyWith(salesCount: 0, isTopSelling: false);
+    }
+    notifyListeners();
   }
 
   void replaceAllItems(List<MenuItem> newItems) {

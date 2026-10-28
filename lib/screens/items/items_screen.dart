@@ -988,7 +988,7 @@ class _ItemsScreenState extends State<ItemsScreen> {
                                                         ),
                                                         const SizedBox(width: 3),
                                                         Text(
-                                                          '${item.salesCount} sold',
+                                                          item.salesCount > 0 ? '${item.salesCount} sold' : 'In Menu',
                                                           style: TextStyle(
                                                             fontSize: 10,
                                                             fontWeight: FontWeight.w700,

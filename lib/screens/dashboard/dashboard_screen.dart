@@ -91,7 +91,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                profile.name,
+                profile.name.isNotEmpty ? profile.name : 'Rest POS',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.titleMedium?.copyWith(
@@ -103,7 +103,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 1),
               Text(
-                profile.tagline,
+                profile.tagline.isNotEmpty ? profile.tagline : 'Point of Sale & Billing',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodySmall?.copyWith(
@@ -1349,13 +1349,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   padding: const EdgeInsets.all(2),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildIntervalChip('Today', ItemsSoldInterval.today, color),
-                      _buildIntervalChip('Week', ItemsSoldInterval.weekly, color),
-                      _buildIntervalChip('Month', ItemsSoldInterval.monthly, color),
-                    ],
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildIntervalChip('Today', ItemsSoldInterval.today, color),
+                        _buildIntervalChip('Week', ItemsSoldInterval.weekly, color),
+                        _buildIntervalChip('Month', ItemsSoldInterval.monthly, color),
+                      ],
+                    ),
                   ),
                 ),
               ],
