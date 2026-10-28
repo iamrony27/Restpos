@@ -39,26 +39,53 @@ graph TD
 
 ## ✨ Key Features
 
-### 1. 📊 Executive Dashboard & Real-Time Analytics
+### 1. 📊 Executive Dashboard & Circular Sales Analytics
 - **Today's Gross Sales & Net Revenue**: Live metrics updated immediately upon each transaction.
-- **Average Ticket Value (ATV)** & Order Count tracker.
+- **Dynamic Circular Sales Chart (`fl_chart`)**: Interactive Donut/Pie sales distribution chart with toggle between `# Qty Sold` and `₹ Revenue Generated`.
+- **Top-Selling Dishes Carousel**: Highlighting peak velocity items with dish photos, quantity counters, and total turnover.
 - **Hourly Sales Velocity Chart**: Interactive trend graph powered by `fl_chart` to detect peak rush hours for kitchen staffing.
-- **Payment Distribution**: Instant breakdown across **UPI QR**, **Cash Tender**, and **Debit/Credit Card**.
+- **Dynamic Thermal Printer Status Badge**: Real-time printer status chip (`• 58mm Online` / `Offline`) with tap-to-reconnect toggle.
 - **Hardware Telemetry**: Displays real-time device battery percentage, charging state, and Android OS version via native platform channels.
 
-### 2. ⚡ High-Throughput POS Billing Engine
+### 2. ⚡ High-Throughput POS Billing Engine & Tax Architecture
 - **Visual Catalog & Instant Filters**: Filter dishes by category (`Beverages`, `Appetizers`, `Main Course`, `Breads & Rice`, `Desserts`) and dietary badges (**Veg 🟢**, **Non-Veg 🔴**, **Egg 🟡**).
 - **Dual Operating Modes**:
-  - **Dine-In Mode**: Seamless table assignment and floor plan integration.
+  - **Dine-In Mode**: Seamless table assignment (`"Select Table"` bar) and floor plan integration.
   - **Takeaway Mode**: Counter billing with rapid checkout.
-- **Cart Management**: Incremental quantity steppers (`+` / `-`), line-item special kitchen notes, and bill discounts.
-- **Automated Tax Calculation**: Indian GST engine calculating CGST (2.5%) and SGST (2.5%).
+- **Cart Management & Precision Math**:
+  - Integer paise precision to eliminate floating-point penny-rounding errors.
+  - Line-item special kitchen notes and discount application.
+- **Configurable Indian GST & Tax Modes**:
+  - **Tax Inclusive (MRP-style)**: Product prices include 5% GST; automatic extraction of taxable base and CGST/SGST without inflating customer total.
+  - **Tax Exclusive**: Calculates and appends CGST (2.5%) and SGST (2.5%) at checkout.
+  - **GST Enable / Disable Toggle**: Easily switch off tax calculation for non-GST composite dealers.
+  - **Automatic Invoice Round-Off**: Indian statutory nearest-rupee round-off calculation (`roundOffPaise`).
 - **Multi-Tender Payment Settlement**:
   - **Dynamic Bharat UPI QR Code**: Encodes merchant VPA, bill amount down to the paise, and order reference into a standard on-screen QR code (scannable via Google Pay, PhonePe, Paytm, BHIM).
   - **Cash Tender Calculator**: Quick currency chips (`+₹100`, `+₹200`, `+₹500`, `+₹2000`) with automatic change-due calculations.
   - **Card / Ledger**: Instant settlement recording.
 
-### 3. 🪑 Visual Floor Plan & Table Management
+### 3. 🍲 Menu Item Management & Dynamic Catalog
+- **Add New Items**: In-app modal dialog to register new dishes with name, category, price, and dietary type.
+- **Context Actions (3-Dot Menu)**:
+  - **Edit Dish**: Update dish names, pricing, and categories on the fly.
+  - **Delete Dish**: Remove items with confirmation safeguards.
+  - **Activate / Deactivate (Stock Toggle)**: Mark items out-of-stock with a clear dimmed visual overlay and disabled selection.
+- **Auto-Collapsing Search Bar**: POS search bar dynamically collapses on scroll down and re-expands when scrolling back up.
+
+### 4. 📑 Sales Analytics & Statutory GST PDF Reports
+- **Multi-Period Aggregation**: Instant turnover summaries for **Monthly**, **Quarterly**, and **Yearly** reporting intervals.
+- **Statutory Audit Breakdown**:
+  - Taxable Gross Turnover vs Net Collections.
+  - CGST (2.5%) and SGST (2.5%) audit reconciliation.
+  - Average Order Value (AOV) and Order Count.
+  - Tender breakdown (UPI vs Cash vs Card).
+  - Category-wise turnover matrix.
+- **Official A4 PDF Generator (`pdf` + `printing`)**:
+  - One-tap generation of clean, printable tax invoices & audit reports.
+  - Android system print spooler & share integration with direct thermal/desktop printer support.
+
+### 5. 🪑 Visual Floor Plan & Table Management
 - **Color-Coded Table Statuses**:
   - 🟢 **Available (Green)**: Ready for seating.
   - 🔵 **Occupied (Blue)**: Active dining session with unbilled orders.
@@ -67,18 +94,19 @@ graph TD
 - **Live Elapsed Dining Timer**: Real-time counter showing elapsed dining minutes since order placement to monitor table turnover rate.
 - **Table Operations**: Quick actions to seat guests, transfer active bills between tables, or free tables upon checkout.
 
-### 4. 🧾 Orders Pipeline & Kitchen Tickets (KOT)
+### 6. 🧾 Orders Pipeline & Kitchen Tickets (KOT)
 - Full lifecycle tracking: `Open` ➔ `Billed` ➔ `Paid` ➔ `Completed` (or `Cancelled`).
 - Kitchen Order Ticket (KOT) formatting for 58mm and 80mm thermal printers.
 - Detailed receipt modals with bill reprint capabilities.
 
-### 5. 🎨 Material 3 Design & Buttery Animations
-- **Material 3 Tonal Palette**: Expressive typography (`GoogleFonts.inter`), surface container elevations, and light/dark theme switching.
+### 7. 🎨 Material 3 Design & Buttery Animations
+- **Material 3 Tonal Palette**: Expressive typography (`GoogleFonts.inter`), surface container elevations, and vibrant palette.
+- **Floating FAB-Style Navigation Bar**: Sleek rounded-corner navigation dock with auto-hide behavior on scroll down.
 - **Button Tap Bounce Animation (`BouncingButton`)**: Smooth scale-down spring physics (`Curves.easeInOutCubic` ➔ `Curves.easeOutBack`) accompanied by native tactile haptic feedback.
 - **Screen Transitions (`SmoothPageRoute`)**: Fluid slide and fade animations when changing views.
-- **Adaptive Layout**: Switches between bottom `NavigationBar` on phones and lateral `NavigationRail` on tablets/countertop displays.
+- **Adaptive Layout**: Switches between bottom navigation on phones and lateral `NavigationRail` on tablets/countertop displays.
 
-### 6. 📱 Native Android Platform API Integration
+### 8. 📱 Native Android Platform API Integration
 Built-in `MethodChannel` (`com.restaurantpos.app/native_channel`) in `MainActivity.kt`:
 - `getDeviceInfo`: Device model, manufacturer, Android OS version, and hardware ID.
 - `getBatteryInfo`: Android `BatteryManager` percentage and charging detection.
