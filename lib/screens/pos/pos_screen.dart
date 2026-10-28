@@ -56,6 +56,7 @@ Widget buildDishImage(
       height: height,
       width: width,
       fit: fit,
+      cacheWidth: (cacheWidth ?? 360).toInt(),
       errorBuilder: (_, __, ___) => placeholder(Icons.broken_image_rounded),
     );
   } else if (uri.startsWith('http://') || uri.startsWith('https://')) {
@@ -64,6 +65,7 @@ Widget buildDishImage(
       height: height,
       width: width,
       fit: fit,
+      cacheWidth: (cacheWidth ?? 360).toInt(),
       errorBuilder: (_, __, ___) => placeholder(Icons.broken_image_rounded),
     );
   } else {
@@ -798,6 +800,8 @@ class _PosScreenState extends State<PosScreen> {
       dishes = dishes.where((d) => d.dietaryType == _dietaryFilter).toList();
     }
 
+    final cartLineMap = {for (final l in posProvider.cart) l.item.id: l};
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -1056,7 +1060,7 @@ class _PosScreenState extends State<PosScreen> {
                         itemCount: dishes.length,
                         itemBuilder: (context, index) {
                           final item = dishes[index];
-                          final cartLine = posProvider.cart.where((l) => l.item.id == item.id).firstOrNull;
+                          final cartLine = cartLineMap[item.id];
 
                           return RepaintBoundary(
                             child: Card(
@@ -1532,7 +1536,7 @@ class _PosScreenState extends State<PosScreen> {
                         separatorBuilder: (_, __) => const SizedBox(height: 8),
                         itemBuilder: (context, index) {
                           final item = dishes[index];
-                          final cartLine = posProvider.cart.where((l) => l.item.id == item.id).firstOrNull;
+                          final cartLine = cartLineMap[item.id];
 
                           return RepaintBoundary(
                             child: Container(

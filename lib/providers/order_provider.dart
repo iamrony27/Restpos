@@ -35,7 +35,8 @@ class OrderProvider extends ChangeNotifier {
   double get averageTicketValueRupees {
     final paid = completedOrders;
     if (paid.isEmpty) return 0.0;
-    return totalRevenueRupees / paid.length;
+    final revPaise = paid.fold<int>(0, (sum, o) => sum + o.totalPaise);
+    return (revPaise / 100.0) / paid.length;
   }
 
   int get itemsSoldToday {

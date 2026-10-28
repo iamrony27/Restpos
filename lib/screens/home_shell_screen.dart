@@ -26,7 +26,13 @@ class HomeShellScreen extends StatefulWidget {
 
 class _HomeShellScreenState extends State<HomeShellScreen> {
   int _currentIndex = 0;
-  bool _isBottomBarVisible = true;
+  final ValueNotifier<bool> _isBottomBarVisible = ValueNotifier<bool>(true);
+
+  @override
+  void dispose() {
+    _isBottomBarVisible.dispose();
+    super.dispose();
+  }
 
   void _onTabSelected(int index) {
     if (_currentIndex == index) return;
@@ -37,12 +43,12 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
   }
 
   bool _handleScrollNotification(UserScrollNotification notification) {
-    if (notification.direction == ScrollDirection.reverse && _isBottomBarVisible) {
-      // User is scrolling down -> Hide bar
-      setState(() => _isBottomBarVisible = false);
-    } else if (notification.direction == ScrollDirection.forward && !_isBottomBarVisible) {
-      // User is scrolling up -> Show bar
-      setState(() => _isBottomBarVisible = true);
+    if (notification.direction == ScrollDirection.reverse && _isBottomBarVisible.value) {
+      // User is scrolling down -> Hide bar without rebuilding whole tree
+      _isBottomBarVisible.value = false;
+    } else if (notification.direction == ScrollDirection.forward && !_isBottomBarVisible.value) {
+      // User is scrolling up -> Show bar without rebuilding whole tree
+      _isBottomBarVisible.value = true;
     }
     return false;
   }
@@ -135,10 +141,16 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
           children: screens,
         ),
       ),
-      bottomNavigationBar: AnimatedSlide(
-        duration: const Duration(milliseconds: 260),
-        curve: Curves.easeInOutCubic,
-        offset: _isBottomBarVisible ? Offset.zero : const Offset(0, 1.4),
+      bottomNavigationBar: ValueListenableBuilder<bool>(
+        valueListenable: _isBottomBarVisible,
+        builder: (context, isVisible, child) {
+          return AnimatedSlide(
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeInOutCubic,
+            offset: isVisible ? Offset.zero : const Offset(0, 1.4),
+            child: child!,
+          );
+        },
         child: SafeArea(
           child: SizedBox(
             height: 82,
@@ -173,7 +185,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(34),
                       child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                         child: Container(
                           decoration: BoxDecoration(
                             color: widget.isDarkMode

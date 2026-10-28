@@ -4,7 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'color_schemes.dart';
 
 class AppTheme {
-  static ThemeData get lightTheme {
+  static final ThemeData lightTheme = _buildLightTheme();
+  static final ThemeData darkTheme = _buildDarkTheme();
+
+  static ThemeData _buildLightTheme() {
     const scheme = AppColorSchemes.lightScheme;
     final textTheme = GoogleFonts.interTextTheme(ThemeData.light().textTheme);
 
@@ -85,7 +88,7 @@ class AppTheme {
     );
   }
 
-  static ThemeData get darkTheme {
+  static ThemeData _buildDarkTheme() {
     const scheme = AppColorSchemes.darkScheme;
     final textTheme = GoogleFonts.interTextTheme(ThemeData.dark().textTheme);
 

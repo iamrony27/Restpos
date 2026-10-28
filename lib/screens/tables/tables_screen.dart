@@ -378,7 +378,8 @@ class TablesScreen extends StatelessWidget {
                       final table = tables[index];
                       final statusColor = _getStatusColor(table.status);
 
-                      return BouncingButton(
+                      return RepaintBoundary(
+                        child: BouncingButton(
                         onPressed: () {
                           NativeApiChannel.triggerNativeHaptic();
                           _showTableActionDialog(context, table);
@@ -520,7 +521,8 @@ class TablesScreen extends StatelessWidget {
                             ),
                           ),
                         ),
-                      );
+                      ),
+                    );
                     },
                   ),
           ),

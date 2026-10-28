@@ -13,10 +13,17 @@ class LocalStorageService {
   static const String _keyMenuCategories = 'pos_saved_menu_categories';
   static const String _keyProfile = 'restaurant_profile';
 
+  static SharedPreferences? _cachedPrefs;
+
+  static Future<SharedPreferences> _getPrefs() async {
+    _cachedPrefs ??= await SharedPreferences.getInstance();
+    return _cachedPrefs!;
+  }
+
   // --- Orders Persistence ---
   static Future<void> saveOrders(List<Order> orders) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       final jsonList = orders.map((o) => o.toMap()).toList();
       await prefs.setString(_keyOrders, jsonEncode(jsonList));
     } catch (_) {}
@@ -24,7 +31,7 @@ class LocalStorageService {
 
   static Future<List<Order>?> loadOrders() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       final str = prefs.getString(_keyOrders);
       if (str == null || str.isEmpty) return null;
       final List<dynamic> decoded = jsonDecode(str) as List<dynamic>;
@@ -36,7 +43,7 @@ class LocalStorageService {
 
   static Future<void> clearOrders() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       await prefs.remove(_keyOrders);
     } catch (_) {}
   }
@@ -44,7 +51,7 @@ class LocalStorageService {
   // --- Tables Persistence ---
   static Future<void> saveTables(List<RestaurantTable> tables) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       final jsonList = tables.map((t) => t.toMap()).toList();
       await prefs.setString(_keyTables, jsonEncode(jsonList));
     } catch (_) {}
@@ -52,7 +59,7 @@ class LocalStorageService {
 
   static Future<List<RestaurantTable>?> loadTables() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       final str = prefs.getString(_keyTables);
       if (str == null || str.isEmpty) return null;
       final List<dynamic> decoded = jsonDecode(str) as List<dynamic>;
@@ -65,7 +72,7 @@ class LocalStorageService {
   // --- Menu Items & Categories Persistence ---
   static Future<void> saveMenuItems(List<MenuItem> items) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       final jsonList = items.map((i) => i.toMap()).toList();
       await prefs.setString(_keyMenuItems, jsonEncode(jsonList));
     } catch (_) {}
@@ -73,7 +80,7 @@ class LocalStorageService {
 
   static Future<List<MenuItem>?> loadMenuItems() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       final str = prefs.getString(_keyMenuItems);
       if (str == null || str.isEmpty) return null;
       final List<dynamic> decoded = jsonDecode(str) as List<dynamic>;
@@ -85,7 +92,7 @@ class LocalStorageService {
 
   static Future<void> saveMenuCategories(List<MenuCategory> categories) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       final jsonList = categories.map((c) => c.toMap()).toList();
       await prefs.setString(_keyMenuCategories, jsonEncode(jsonList));
     } catch (_) {}
@@ -93,7 +100,7 @@ class LocalStorageService {
 
   static Future<List<MenuCategory>?> loadMenuCategories() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       final str = prefs.getString(_keyMenuCategories);
       if (str == null || str.isEmpty) return null;
       final List<dynamic> decoded = jsonDecode(str) as List<dynamic>;
@@ -106,14 +113,14 @@ class LocalStorageService {
   // --- Restaurant Profile Persistence ---
   static Future<void> saveProfile(RestaurantProfile profile) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       await prefs.setString(_keyProfile, jsonEncode(profile.toMap()));
     } catch (_) {}
   }
 
   static Future<RestaurantProfile?> loadProfile() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _getPrefs();
       final str = prefs.getString(_keyProfile);
       if (str == null || str.isEmpty) return null;
       final Map<String, dynamic> decoded = jsonDecode(str) as Map<String, dynamic>;

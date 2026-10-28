@@ -48,6 +48,7 @@ Widget _buildDishImage(
       height: height,
       width: width,
       fit: fit,
+      cacheWidth: (cacheWidth ?? 360).toInt(),
       errorBuilder: (_, __, ___) => placeholder(Icons.broken_image_rounded),
     );
   } else if (uri.startsWith('http://') || uri.startsWith('https://')) {
@@ -56,6 +57,7 @@ Widget _buildDishImage(
       height: height,
       width: width,
       fit: fit,
+      cacheWidth: (cacheWidth ?? 360).toInt(),
       errorBuilder: (_, __, ___) => placeholder(Icons.broken_image_rounded),
     );
   } else {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'providers/menu_provider.dart';
 import 'providers/order_provider.dart';
@@ -40,10 +41,31 @@ class RestaurantPosApp extends StatefulWidget {
 class _RestaurantPosAppState extends State<RestaurantPosApp> {
   bool _isDarkMode = false;
 
-  void _toggleTheme() {
+  @override
+  void initState() {
+    super.initState();
+    _loadThemePreference();
+  }
+
+  Future<void> _loadThemePreference() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedDark = prefs.getBool('app_is_dark_mode');
+      if (savedDark != null && mounted) {
+        setState(() => _isDarkMode = savedDark);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _toggleTheme() async {
+    final next = !_isDarkMode;
     setState(() {
-      _isDarkMode = !_isDarkMode;
+      _isDarkMode = next;
     });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('app_is_dark_mode', next);
+    } catch (_) {}
   }
 
   @override

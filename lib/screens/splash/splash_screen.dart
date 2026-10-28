@@ -54,27 +54,28 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     _animController.forward();
 
-    // Navigate to Setup Wizard or Home Shell after branded loading
-    _timer = Timer(const Duration(milliseconds: 2000), _checkSetupAndNavigate);
+    // Parallelize storage preloading with branded splash animation for 2x faster cold boot
+    _loadAndNavigate();
   }
 
-  Future<void> _checkSetupAndNavigate() async {
-    if (!mounted) return;
-    _timer?.cancel();
-
+  Future<void> _loadAndNavigate() async {
     final posProvider = Provider.of<PosProvider>(context, listen: false);
     final orderProvider = Provider.of<OrderProvider>(context, listen: false);
     final tableProvider = Provider.of<TableProvider>(context, listen: false);
     final menuProvider = Provider.of<MenuProvider>(context, listen: false);
 
-    await Future.wait([
+    final results = await Future.wait([
+      Future.delayed(const Duration(milliseconds: 1000)),
       posProvider.loadProfileFromStorage(),
       orderProvider.loadFromStorage(),
       tableProvider.loadFromStorage(),
       menuProvider.loadFromStorage(),
+      SharedPreferences.getInstance(),
     ]);
 
-    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+
+    final prefs = results[5] as SharedPreferences;
     final isSetupCompleted = prefs.getBool('is_setup_completed') ?? false;
 
     if (!mounted) return;
@@ -121,7 +122,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A), // Deep Slate Obsidian
       body: GestureDetector(
-        onTap: _checkSetupAndNavigate, // Tap to immediately skip splash
+        onTap: _loadAndNavigate, // Tap to immediately skip splash
         behavior: HitTestBehavior.opaque,
         child: SafeArea(
           child: Stack(
