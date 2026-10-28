@@ -14,13 +14,25 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import android.provider.MediaStore
 import android.provider.Settings
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothSocket
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
+import java.io.OutputStream
+import java.util.UUID
+import java.util.concurrent.Executors
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.restaurantpos.app/native_channel"
+    private val SPP_UUID: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
+    private var printerSocket: BluetoothSocket? = null
+    private var printerOutputStream: OutputStream? = null
+    private var connectedPrinterMac: String? = null
+    private val btExecutor = Executors.newSingleThreadExecutor()
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -91,6 +103,18 @@ class MainActivity : FlutterActivity() {
                     }
                 }
 
+                "openBluetoothSettings" -> {
+                    try {
+                        val intent = Intent(Settings.ACTION_BLUETOOTH_SETTINGS).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
+                        startActivity(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("INTENT_FAILED", e.localizedMessage, null)
+                    }
+                }
+
                 "openUrl" -> {
                     val urlString = call.argument<String>("url")
                     try {
@@ -108,10 +132,143 @@ class MainActivity : FlutterActivity() {
                     }
                 }
 
+                "getBondedBluetoothDevices" -> {
+                    try {
+                        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+                        val adapter = bluetoothManager?.adapter ?: BluetoothAdapter.getDefaultAdapter()
+                        if (adapter == null) {
+                            result.error("NO_BLUETOOTH", "Bluetooth is not available on this device", null)
+                            return@setMethodCallHandler
+                        }
+                        if (!adapter.isEnabled) {
+                            result.error("BLUETOOTH_DISABLED", "Bluetooth is turned off. Please enable it in Settings.", null)
+                            return@setMethodCallHandler
+                        }
+                        val bondedDevices = adapter.bondedDevices
+                        val deviceList = mutableListOf<Map<String, String>>()
+                        for (device in bondedDevices) {
+                            deviceList.add(mapOf(
+                                "name" to (device.name ?: "Unknown Device"),
+                                "address" to device.address
+                            ))
+                        }
+                        result.success(deviceList)
+                    } catch (e: SecurityException) {
+                        result.error("PERMISSION_DENIED", "Bluetooth permission denied: ${e.message}", null)
+                    } catch (e: Exception) {
+                        result.error("SCAN_FAILED", e.localizedMessage, null)
+                    }
+                }
+
+                "connectBluetoothPrinter" -> {
+                    val address = call.argument<String>("address")
+                    if (address.isNullOrBlank()) {
+                        result.error("INVALID_ADDRESS", "Printer MAC address cannot be blank", null)
+                        return@setMethodCallHandler
+                    }
+                    btExecutor.execute {
+                        try {
+                            try {
+                                printerOutputStream?.close()
+                                printerSocket?.close()
+                            } catch (_: Exception) {}
+
+                            val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+                            val adapter = bluetoothManager?.adapter ?: BluetoothAdapter.getDefaultAdapter()
+                            val device = adapter?.getRemoteDevice(address)
+                            if (device == null) {
+                                runOnUiThread { result.error("DEVICE_NOT_FOUND", "Could not locate device with MAC: $address", null) }
+                                return@execute
+                            }
+
+                            adapter.cancelDiscovery()
+                            val socket = device.createRfcommSocketToServiceRecord(SPP_UUID)
+                            socket.connect()
+
+                            printerSocket = socket
+                            printerOutputStream = socket.outputStream
+                            connectedPrinterMac = address
+
+                            runOnUiThread { result.success(true) }
+                        } catch (e: Exception) {
+                            printerSocket = null
+                            printerOutputStream = null
+                            connectedPrinterMac = null
+                            runOnUiThread { result.error("CONNECT_FAILED", "Failed to connect to printer: ${e.message}", null) }
+                        }
+                    }
+                }
+
+                "disconnectBluetoothPrinter" -> {
+                    try {
+                        printerOutputStream?.close()
+                        printerSocket?.close()
+                        printerSocket = null
+                        printerOutputStream = null
+                        connectedPrinterMac = null
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("DISCONNECT_FAILED", e.localizedMessage, null)
+                    }
+                }
+
+                "isPrinterConnected" -> {
+                    val connected = printerSocket?.isConnected == true
+                    result.success(connected)
+                }
+
                 "printReceipt" -> {
-                    val receiptText = call.argument<String>("receiptText")
-                    // Real ESC/POS Bluetooth thermal socket dispatch hook
-                    result.success(true)
+                    val receiptText = call.argument<String>("receiptText") ?: ""
+                    val rawMac = call.argument<String>("printerMac")
+                    val printerMac = if (!rawMac.isNullOrBlank()) rawMac else connectedPrinterMac
+
+                    btExecutor.execute {
+                        try {
+                            if (printerSocket?.isConnected != true && !printerMac.isNullOrBlank()) {
+                                val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+                                val adapter = bluetoothManager?.adapter ?: BluetoothAdapter.getDefaultAdapter()
+                                val device = adapter?.getRemoteDevice(printerMac)
+                                adapter?.cancelDiscovery()
+                                val socket = device?.createRfcommSocketToServiceRecord(SPP_UUID)
+                                socket?.connect()
+                                printerSocket = socket
+                                printerOutputStream = socket?.outputStream
+                                connectedPrinterMac = printerMac
+                            }
+
+                            val outStream = printerOutputStream
+                            if (outStream == null || printerSocket?.isConnected != true) {
+                                runOnUiThread { result.error("NOT_CONNECTED", "No thermal printer connected. Please select one in Settings.", null) }
+                                return@execute
+                            }
+
+                            val ESC = 0x1B.toByte()
+                            val GS = 0x1D.toByte()
+
+                            // ESC @ : Initialize printer
+                            outStream.write(byteArrayOf(ESC, 0x40))
+
+                            // Character table: default
+                            outStream.write(byteArrayOf(ESC, 0x74, 0x00))
+
+                            // Replace Rupee sign with Rs. for standard ESC/POS compatibility
+                            val cleanText = receiptText.replace("₹", "Rs. ")
+                            outStream.write(cleanText.toByteArray(Charsets.UTF_8))
+
+                            // Feed 3 blank lines
+                            outStream.write(byteArrayOf(ESC, 0x64, 0x03))
+
+                            // GS V 66 0 : Cut paper
+                            try {
+                                outStream.write(byteArrayOf(GS, 0x56, 0x42, 0x00))
+                            } catch (_: Exception) {}
+
+                            outStream.flush()
+                            runOnUiThread { result.success(true) }
+                        } catch (e: Exception) {
+                            runOnUiThread { result.error("PRINT_FAILED", "Print error: ${e.message}", null) }
+                        }
+                    }
                 }
 
                 "pickImage" -> {

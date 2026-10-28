@@ -15,6 +15,7 @@ import 'wifi_debugging_guide_screen.dart';
 import '../../widgets/developer_support_section.dart';
 import '../../widgets/thermal_slip_preview_dialog.dart';
 import '../../core/utils/app_notification.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -33,12 +34,267 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   NativeDeviceInfo? _deviceInfo;
   NativeBatteryInfo? _batteryInfo;
-  bool _printerConnected = true;
+  bool _printerConnected = false;
+  String? _connectedPrinterName;
+  String? _connectedPrinterMac;
+  bool _isConnectingPrinter = false;
+  bool _is80mmPaper = false;
 
   @override
   void initState() {
     super.initState();
     _loadHardwareInfo();
+    _loadPrinterPreference();
+  }
+
+  Future<void> _loadPrinterPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedMac = prefs.getString('bt_printer_mac');
+    final savedName = prefs.getString('bt_printer_name');
+    final is80 = prefs.getBool('bt_printer_80mm') ?? false;
+    final isConnected = await NativeApiChannel.isPrinterConnected();
+
+    if (mounted) {
+      setState(() {
+        _connectedPrinterMac = savedMac;
+        _connectedPrinterName = savedName;
+        _is80mmPaper = is80;
+        _printerConnected = isConnected;
+      });
+    }
+
+    if (savedMac != null && !isConnected) {
+      final ok = await NativeApiChannel.connectBluetoothPrinter(savedMac);
+      if (mounted) {
+        setState(() => _printerConnected = ok);
+      }
+    }
+  }
+
+  Future<void> _connectToPrinter(String mac, String name) async {
+    setState(() => _isConnectingPrinter = true);
+    AppNotification.showInfo(context, 'Connecting to $name...', title: 'Bluetooth Printer');
+
+    final success = await NativeApiChannel.connectBluetoothPrinter(mac);
+    if (!mounted) return;
+
+    setState(() {
+      _isConnectingPrinter = false;
+      _printerConnected = success;
+      if (success) {
+        _connectedPrinterMac = mac;
+        _connectedPrinterName = name;
+      }
+    });
+
+    if (success) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('bt_printer_mac', mac);
+      await prefs.setString('bt_printer_name', name);
+      if (mounted) {
+        AppNotification.showSuccess(context, 'Connected to $name ($mac)', title: 'Thermal Printer Online 🖨️');
+      }
+    } else {
+      if (mounted) {
+        AppNotification.showError(
+          context,
+          'Could not connect to $name. Please ensure printer is powered on and paired.',
+          title: 'Connection Failed',
+        );
+      }
+    }
+  }
+
+  Future<void> _disconnectPrinter() async {
+    await NativeApiChannel.disconnectBluetoothPrinter();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('bt_printer_mac');
+    await prefs.remove('bt_printer_name');
+
+    if (mounted) {
+      setState(() {
+        _printerConnected = false;
+        _connectedPrinterMac = null;
+        _connectedPrinterName = null;
+      });
+      AppNotification.showInfo(context, 'Thermal printer disconnected.', title: 'Printer Offline');
+    }
+  }
+
+  Future<void> _showPrinterSelectionSheet() async {
+    await NativeApiChannel.triggerNativeHaptic();
+    if (!mounted) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return FutureBuilder<List<Map<String, String>>>(
+              future: NativeApiChannel.getBondedBluetoothDevices(),
+              builder: (context, snapshot) {
+                final theme = Theme.of(context);
+                final isLoading = snapshot.connectionState == ConnectionState.waiting;
+                final devices = snapshot.data ?? [];
+
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.bluetooth_searching_rounded, color: theme.colorScheme.primary),
+                              const SizedBox(width: 10),
+                              Text(
+                                'Select Thermal Printer',
+                                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                            ],
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.refresh_rounded),
+                            tooltip: 'Refresh paired devices',
+                            onPressed: () => setSheetState(() {}),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Choose your paired Bluetooth thermal receipt printer (58mm/80mm):',
+                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                      const SizedBox(height: 16),
+                      if (isLoading)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 32),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      else if (devices.isEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(Icons.bluetooth_disabled_rounded, size: 40, color: theme.colorScheme.outline),
+                              const SizedBox(height: 10),
+                              const Text(
+                                'No Paired Bluetooth Devices Found',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Turn on your thermal printer and pair it in Android Bluetooth Settings first.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+                              ),
+                              const SizedBox(height: 14),
+                              FilledButton.icon(
+                                onPressed: () {
+                                  Navigator.pop(ctx);
+                                  NativeApiChannel.openBluetoothSettings();
+                                },
+                                icon: const Icon(Icons.settings_bluetooth_rounded, size: 18),
+                                label: const Text('Open Bluetooth Settings'),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: devices.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (context, idx) {
+                            final dev = devices[idx];
+                            final name = dev['name'] ?? 'Unknown Device';
+                            final mac = dev['address'] ?? '';
+                            final isCurrent = _connectedPrinterMac == mac && _printerConnected;
+
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              leading: CircleAvatar(
+                                backgroundColor: isCurrent
+                                    ? CulinaryColors.emeraldGreen.withOpacity(0.15)
+                                    : theme.colorScheme.surfaceContainerHigh,
+                                child: Icon(
+                                  Icons.print_rounded,
+                                  color: isCurrent ? CulinaryColors.emeraldGreen : theme.colorScheme.primary,
+                                ),
+                              ),
+                              title: Text(
+                                name,
+                                style: TextStyle(
+                                  fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
+                                  color: isCurrent ? CulinaryColors.emeraldGreen : null,
+                                ),
+                              ),
+                              subtitle: Text(mac, style: const TextStyle(fontSize: 12)),
+                              trailing: isCurrent
+                                  ? const Icon(Icons.check_circle_rounded, color: CulinaryColors.emeraldGreen)
+                                  : FilledButton.tonal(
+                                      onPressed: () async {
+                                        Navigator.pop(ctx);
+                                        await _connectToPrinter(mac, name);
+                                      },
+                                      child: const Text('Connect'),
+                                    ),
+                              onTap: isCurrent
+                                  ? null
+                                  : () async {
+                                      Navigator.pop(ctx);
+                                      await _connectToPrinter(mac, name);
+                                    },
+                            );
+                          },
+                        ),
+                      const SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          NativeApiChannel.openBluetoothSettings();
+                        },
+                        icon: const Icon(Icons.settings_bluetooth_rounded, size: 18),
+                        label: const Text('Pair New Printer in Bluetooth Settings'),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _loadHardwareInfo() async {
@@ -57,6 +313,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final profile = pos.profile;
     await NativeApiChannel.triggerNativeHaptic();
 
+    final widthText = _is80mmPaper ? "80mm (Wide / 48 col)" : "58mm (Standard / 32 col)";
     final sample = '''
 ================================
      TEST RECEIPT - ESC/POS
@@ -69,10 +326,33 @@ FSSAI Lic: ${profile.fssai.isNotEmpty ? profile.fssai : "11223344556677"}
 GSTIN: ${profile.isGstEnabled ? profile.gstin : "Non-GST / Exempt"}
 Round-Off: ${profile.isRoundOffEnabled ? "ENABLED" : "DISABLED"}
 Date: ${DateTime.now().toString().split('.')[0]}
-Printer: Thermal 58mm / 80mm
-Status: CONNECTED & READY
+Paper: $widthText
+Printer: ${_connectedPrinterName ?? "Generic Thermal"}
+Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
 ================================
 ''';
+
+    if (_printerConnected) {
+      final printed = await NativeApiChannel.printReceiptNative(
+        receiptText: sample,
+        printerMacAddress: _connectedPrinterMac,
+      );
+      if (mounted) {
+        if (printed) {
+          AppNotification.showSuccess(
+            context,
+            'Dispatched test ESC/POS receipt to ${_connectedPrinterName ?? "printer"}.',
+            title: 'Print Successful 🖨️',
+          );
+        } else {
+          AppNotification.showError(
+            context,
+            'Failed to dispatch ESC/POS bytes. Verify printer power and paper roll.',
+            title: 'Printer Communication Failed',
+          );
+        }
+      }
+    }
 
     if (!mounted) return;
     await ThermalSlipPreviewDialog.show(
@@ -555,25 +835,162 @@ Status: CONNECTED & READY
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('ESC/POS Thermal Printing', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: [
                           Icon(Icons.print_rounded, color: theme.colorScheme.primary),
-                          const SizedBox(width: 10),
-                          const Text('Bluetooth Thermal Printer', style: TextStyle(fontWeight: FontWeight.w600)),
+                          const SizedBox(width: 8),
+                          Text('ESC/POS Thermal Printing',
+                              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                         ],
                       ),
-                      Switch(
-                        value: _printerConnected,
-                        onChanged: (val) => setState(() => _printerConnected = val),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _printerConnected
+                              ? CulinaryColors.emeraldGreen.withOpacity(0.12)
+                              : theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: _printerConnected
+                                ? CulinaryColors.emeraldGreen.withOpacity(0.4)
+                                : theme.colorScheme.outline.withOpacity(0.2),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _printerConnected
+                                    ? CulinaryColors.emeraldGreen
+                                    : theme.colorScheme.outline,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _printerConnected ? 'CONNECTED' : 'NOT CONNECTED',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: _printerConnected
+                                    ? CulinaryColors.emeraldGreen
+                                    : theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
+                  if (_printerConnected && _connectedPrinterName != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: CulinaryColors.emeraldGreen.withOpacity(0.06),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: CulinaryColors.emeraldGreen.withOpacity(0.25)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.bluetooth_connected_rounded, color: CulinaryColors.emeraldGreen, size: 24),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _connectedPrinterName!,
+                                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                                ),
+                                if (_connectedPrinterMac != null)
+                                  Text(
+                                    _connectedPrinterMac!,
+                                    style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: _disconnectPrinter,
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.redAccent,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            ),
+                            child: const Text('Disconnect'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ] else ...[
+                    Text(
+                      'Connect a wireless Bluetooth thermal receipt printer for instant KOT & customer billing slips.',
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _isConnectingPrinter ? null : _showPrinterSelectionSheet,
+                          icon: _isConnectingPrinter
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.bluetooth_searching_rounded, size: 18),
+                          label: Text(_printerConnected ? 'Change Printer' : 'Select / Connect Thermal Printer'),
+                          style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Text(
+                        'Paper Width:',
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: theme.colorScheme.onSurface),
+                      ),
+                      const SizedBox(width: 12),
+                      ChoiceChip(
+                        label: const Text('58mm (2-inch)'),
+                        selected: !_is80mmPaper,
+                        onSelected: (selected) async {
+                          if (selected) {
+                            setState(() => _is80mmPaper = false);
+                            final prefs = await SharedPreferences.getInstance();
+                            await prefs.setBool('bt_printer_80mm', false);
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        label: const Text('80mm (3-inch)'),
+                        selected: _is80mmPaper,
+                        onSelected: (selected) async {
+                          if (selected) {
+                            setState(() => _is80mmPaper = true);
+                            final prefs = await SharedPreferences.getInstance();
+                            await prefs.setBool('bt_printer_80mm', true);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
                   BouncingButton(
                     onPressed: _testPrint,
                     child: Container(
@@ -590,7 +1007,9 @@ Status: CONNECTED & READY
                           Icon(Icons.receipt_rounded, size: 18, color: theme.colorScheme.primary),
                           const SizedBox(width: 8),
                           Text(
-                            'Dispatch Test Print with FSSAI & GST',
+                            _printerConnected
+                                ? 'Print ESC/POS Test Slip & Open Preview'
+                                : 'Preview Test Receipt Slip',
                             style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w700),
                           ),
                         ],

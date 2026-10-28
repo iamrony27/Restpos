@@ -100,6 +100,65 @@ class NativeApiChannel {
     }
   }
 
+  /// Dispatches native Android Intent to open Bluetooth settings for pairing thermal printers
+  static Future<bool> openBluetoothSettings() async {
+    try {
+      final bool? success = await _channel.invokeMethod<bool>('openBluetoothSettings');
+      return success ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  /// Lists all paired Bluetooth devices from Android's BluetoothAdapter
+  static Future<List<Map<String, String>>> getBondedBluetoothDevices() async {
+    try {
+      final List<dynamic>? devices = await _channel.invokeMethod<List<dynamic>>('getBondedBluetoothDevices');
+      if (devices == null) return [];
+      return devices.map((d) {
+        final map = Map<String, dynamic>.from(d as Map);
+        return {
+          'name': (map['name'] as String?) ?? 'Unknown Device',
+          'address': (map['address'] as String?) ?? '',
+        };
+      }).toList();
+    } on PlatformException {
+      return [];
+    }
+  }
+
+  /// Connects to a Bluetooth thermal printer by MAC address
+  static Future<bool> connectBluetoothPrinter(String address) async {
+    try {
+      final bool? success = await _channel.invokeMethod<bool>('connectBluetoothPrinter', {
+        'address': address,
+      });
+      return success ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  /// Disconnects the currently active Bluetooth thermal printer
+  static Future<bool> disconnectBluetoothPrinter() async {
+    try {
+      final bool? success = await _channel.invokeMethod<bool>('disconnectBluetoothPrinter');
+      return success ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  /// Checks if a thermal printer is currently connected
+  static Future<bool> isPrinterConnected() async {
+    try {
+      final bool? connected = await _channel.invokeMethod<bool>('isPrinterConnected');
+      return connected ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
   /// Native Android Bluetooth / Thermal Printer ESC/POS dispatcher
   static Future<bool> printReceiptNative({
     required String receiptText,
