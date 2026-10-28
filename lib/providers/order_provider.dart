@@ -1,10 +1,24 @@
 import 'package:flutter/foundation.dart';
 import '../models/order_model.dart';
 import '../models/table_model.dart';
+import '../services/local_storage_service.dart';
 import 'table_provider.dart';
 
 class OrderProvider extends ChangeNotifier {
   final List<Order> _orders = [];
+
+  Future<void> loadFromStorage() async {
+    final saved = await LocalStorageService.loadOrders();
+    if (saved != null) {
+      _orders.clear();
+      _orders.addAll(saved);
+      notifyListeners();
+    }
+  }
+
+  void _persist() {
+    LocalStorageService.saveOrders(_orders);
+  }
 
   List<Order> get orders => List.unmodifiable(_orders.where((o) => !o.isDeleted).toList());
   List<Order> get allOrdersIncludingDeleted => List.unmodifiable(_orders);
@@ -65,6 +79,7 @@ class OrderProvider extends ChangeNotifier {
 
   void addOrder(Order order) {
     _orders.insert(0, order);
+    _persist();
     notifyListeners();
   }
 
@@ -76,6 +91,7 @@ class OrderProvider extends ChangeNotifier {
         paymentMethod: method ?? _orders[index].paymentMethod,
         completedAt: (status == OrderStatus.paid || status == OrderStatus.completed) ? DateTime.now() : null,
       );
+      _persist();
       notifyListeners();
     }
   }
@@ -84,6 +100,7 @@ class OrderProvider extends ChangeNotifier {
     final index = _orders.indexWhere((o) => o.id == orderId);
     if (index >= 0) {
       _orders[index] = _orders[index].copyWith(status: OrderStatus.cancelled);
+      _persist();
       notifyListeners();
     }
   }
@@ -130,6 +147,7 @@ class OrderProvider extends ChangeNotifier {
         }
       }
 
+      _persist();
       notifyListeners();
     }
   }
@@ -149,6 +167,7 @@ class OrderProvider extends ChangeNotifier {
         tableProvider.freeTable(old.tableId!);
       }
 
+      _persist();
       notifyListeners();
     }
   }
@@ -160,6 +179,7 @@ class OrderProvider extends ChangeNotifier {
         isDeleted: false,
         deletedAt: null,
       );
+      _persist();
       notifyListeners();
     }
   }
@@ -167,11 +187,13 @@ class OrderProvider extends ChangeNotifier {
   void replaceAllOrders(List<Order> newOrders) {
     _orders.clear();
     _orders.addAll(newOrders);
+    _persist();
     notifyListeners();
   }
 
   void clearAllOrders({TableProvider? tableProvider}) {
     _orders.clear();
+    LocalStorageService.clearOrders();
     if (tableProvider != null) {
       for (final table in tableProvider.tables) {
         if (table.status != TableStatus.available) {

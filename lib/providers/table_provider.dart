@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/table_model.dart';
+import '../services/local_storage_service.dart';
 
 class TableProvider extends ChangeNotifier {
   final List<RestaurantTable> _tables = [
@@ -14,6 +15,19 @@ class TableProvider extends ChangeNotifier {
     const RestaurantTable(id: 9, name: 'Table 9 (Rooftop)', seatingCapacity: 4, status: TableStatus.available),
     const RestaurantTable(id: 10, name: 'Table 10 (Rooftop)', seatingCapacity: 4, status: TableStatus.available),
   ];
+
+  Future<void> loadFromStorage() async {
+    final saved = await LocalStorageService.loadTables();
+    if (saved != null && saved.isNotEmpty) {
+      _tables.clear();
+      _tables.addAll(saved);
+      notifyListeners();
+    }
+  }
+
+  void _persist() {
+    LocalStorageService.saveTables(_tables);
+  }
 
   List<RestaurantTable> get tables => List.unmodifiable(_tables);
 
@@ -38,6 +52,7 @@ class TableProvider extends ChangeNotifier {
         occupiedSince: DateTime.now(),
         currentBillPaise: initialBillPaise,
       );
+      _persist();
       notifyListeners();
     }
   }
@@ -49,6 +64,7 @@ class TableProvider extends ChangeNotifier {
         status: TableStatus.billed,
         currentBillPaise: totalPaise,
       );
+      _persist();
       notifyListeners();
     }
   }
@@ -62,6 +78,7 @@ class TableProvider extends ChangeNotifier {
         occupiedSince: null,
         currentBillPaise: 0,
       );
+      _persist();
       notifyListeners();
     }
   }
@@ -84,6 +101,7 @@ class TableProvider extends ChangeNotifier {
         occupiedSince: null,
         currentBillPaise: 0,
       );
+      _persist();
       notifyListeners();
     }
   }
@@ -100,6 +118,7 @@ class TableProvider extends ChangeNotifier {
       seatingCapacity: seatingCapacity,
       status: status,
     ));
+    _persist();
     notifyListeners();
   }
 
@@ -116,18 +135,21 @@ class TableProvider extends ChangeNotifier {
         seatingCapacity: seatingCapacity,
         status: status ?? _tables[index].status,
       );
+      _persist();
       notifyListeners();
     }
   }
 
   void deleteTable(int tableId) {
     _tables.removeWhere((t) => t.id == tableId);
+    _persist();
     notifyListeners();
   }
 
   void replaceAllTables(List<RestaurantTable> newTables) {
     _tables.clear();
     _tables.addAll(newTables);
+    _persist();
     notifyListeners();
   }
 }

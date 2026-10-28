@@ -21,6 +21,14 @@ class OrdersScreen extends StatefulWidget {
 
 class _OrdersScreenState extends State<OrdersScreen> {
   String _selectedFilter = 'all'; // all, active, completed, deleted
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   void _showOrderDetailsDialog(BuildContext context, Order order) {
     final theme = Theme.of(context);
@@ -705,6 +713,20 @@ class _OrdersScreenState extends State<OrdersScreen> {
       orders = orderProvider.deletedOrders;
     }
 
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      orders = orders.where((o) {
+        final orderNo = o.orderNumber.toLowerCase();
+        final table = (o.tableName ?? '').toLowerCase();
+        final phone = (o.customerPhone ?? '').toLowerCase();
+        final itemsMatch = o.items.any((item) => item.menuItem.name.toLowerCase().contains(q));
+        return orderNo.contains(q) ||
+            table.contains(q) ||
+            phone.contains(q) ||
+            itemsMatch;
+      }).toList();
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -751,7 +773,51 @@ class _OrdersScreenState extends State<OrdersScreen> {
               ],
             ),
           ),
-          const Divider(),
+          // Live Search Bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search order #, table, phone, or dish...',
+                hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
+                ),
+                prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear_rounded, size: 18),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.4),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.outlineVariant.withOpacity(0.3),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: theme.colorScheme.primary,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+              onChanged: (val) => setState(() => _searchQuery = val.trim()),
+            ),
+          ),
+          const Divider(height: 1),
           // Order list
           Expanded(
             child: orders.isEmpty
@@ -760,15 +826,21 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          _selectedFilter == 'deleted' ? Icons.delete_sweep_rounded : Icons.inbox_rounded,
+                          _searchQuery.isNotEmpty
+                              ? Icons.search_off_rounded
+                              : (_selectedFilter == 'deleted'
+                                  ? Icons.delete_sweep_rounded
+                                  : Icons.inbox_rounded),
                           size: 48,
                           color: theme.colorScheme.outline,
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          _selectedFilter == 'deleted'
-                              ? 'No deleted orders'
-                              : 'No orders in this category',
+                          _searchQuery.isNotEmpty
+                              ? 'No orders match "$_searchQuery"'
+                              : (_selectedFilter == 'deleted'
+                                  ? 'No deleted orders'
+                                  : 'No orders in this category'),
                           style: theme.textTheme.titleMedium,
                         ),
                       ],

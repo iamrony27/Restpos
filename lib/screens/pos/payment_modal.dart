@@ -11,11 +11,13 @@ import '../../widgets/upi_qr_widget.dart';
 class PaymentModal extends StatefulWidget {
   final Order order;
   final VoidCallback onPaymentConfirmed;
+  final void Function(PaymentMethod method)? onPaymentConfirmedWithMethod;
 
   const PaymentModal({
     super.key,
     required this.order,
     required this.onPaymentConfirmed,
+    this.onPaymentConfirmedWithMethod,
   });
 
   @override
@@ -53,7 +55,11 @@ class _PaymentModalState extends State<PaymentModal> {
       changeDue: changeDue,
       onPrintConfirmed: () {
         if (autoConfirmOnPrint && mounted) {
-          widget.onPaymentConfirmed();
+          if (widget.onPaymentConfirmedWithMethod != null) {
+            widget.onPaymentConfirmedWithMethod!(_selectedMethod);
+          } else {
+            widget.onPaymentConfirmed();
+          }
           Navigator.of(context).pop();
         }
       },

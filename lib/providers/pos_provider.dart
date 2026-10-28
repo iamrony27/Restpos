@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/menu_item.dart';
 import '../models/order_model.dart';
 import '../models/restaurant_profile.dart';
+import '../services/local_storage_service.dart';
 
 class CartLine {
   final MenuItem item;
@@ -18,6 +19,18 @@ class CartLine {
 }
 
 class PosProvider extends ChangeNotifier {
+  Future<void> loadProfileFromStorage() async {
+    final saved = await LocalStorageService.loadProfile();
+    if (saved != null) {
+      _profile = saved;
+      notifyListeners();
+    }
+  }
+
+  void _persistProfile() {
+    LocalStorageService.saveProfile(_profile);
+  }
+
   int _selectedCategoryId = 0; // 0 = All categories
   String _searchQuery = '';
   OrderType _orderType = OrderType.dineIn;
@@ -105,31 +118,37 @@ class PosProvider extends ChangeNotifier {
 
   void updateProfile(RestaurantProfile newProfile) {
     _profile = newProfile;
+    _persistProfile();
     notifyListeners();
   }
 
   void setGstEnabled(bool enabled) {
     _profile = _profile.copyWith(isGstEnabled: enabled);
+    _persistProfile();
     notifyListeners();
   }
 
   void setTaxInclusive(bool isInclusive) {
     _profile = _profile.copyWith(isTaxInclusive: isInclusive);
+    _persistProfile();
     notifyListeners();
   }
 
   void setGstRatePercent(double rate) {
     _profile = _profile.copyWith(gstRatePercent: rate, defaultTaxBps: (rate * 100).round());
+    _persistProfile();
     notifyListeners();
   }
 
   void setRoundOffEnabled(bool enabled) {
     _profile = _profile.copyWith(isRoundOffEnabled: enabled);
+    _persistProfile();
     notifyListeners();
   }
 
   void setFssaiNumber(String number) {
     _profile = _profile.copyWith(fssai: number);
+    _persistProfile();
     notifyListeners();
   }
 

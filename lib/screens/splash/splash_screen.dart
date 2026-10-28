@@ -2,7 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/color_schemes.dart';
+import '../../providers/menu_provider.dart';
+import '../../providers/order_provider.dart';
+import '../../providers/pos_provider.dart';
+import '../../providers/table_provider.dart';
 import '../home_shell_screen.dart';
 import '../setup/setup_wizard_screen.dart';
 
@@ -56,6 +61,18 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   Future<void> _checkSetupAndNavigate() async {
     if (!mounted) return;
     _timer?.cancel();
+
+    final posProvider = Provider.of<PosProvider>(context, listen: false);
+    final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+    final tableProvider = Provider.of<TableProvider>(context, listen: false);
+    final menuProvider = Provider.of<MenuProvider>(context, listen: false);
+
+    await Future.wait([
+      posProvider.loadProfileFromStorage(),
+      orderProvider.loadFromStorage(),
+      tableProvider.loadFromStorage(),
+      menuProvider.loadFromStorage(),
+    ]);
 
     final prefs = await SharedPreferences.getInstance();
     final isSetupCompleted = prefs.getBool('is_setup_completed') ?? false;

@@ -1,8 +1,30 @@
 import 'package:flutter/foundation.dart';
 import '../models/menu_category.dart';
 import '../models/menu_item.dart';
+import '../services/local_storage_service.dart';
 
 class MenuProvider extends ChangeNotifier {
+  Future<void> loadFromStorage() async {
+    final savedItems = await LocalStorageService.loadMenuItems();
+    final savedCats = await LocalStorageService.loadMenuCategories();
+    if (savedCats != null && savedCats.isNotEmpty) {
+      _categories.clear();
+      _categories.addAll(savedCats);
+    }
+    if (savedItems != null && savedItems.isNotEmpty) {
+      _items.clear();
+      _items.addAll(savedItems);
+    }
+    if (savedCats != null || savedItems != null) {
+      notifyListeners();
+    }
+  }
+
+  void _persist() {
+    LocalStorageService.saveMenuItems(_items);
+    LocalStorageService.saveMenuCategories(_categories);
+  }
+
   final List<MenuCategory> _categories = [
     const MenuCategory(id: 1, name: 'Beverages', icon: 'local_cafe_rounded', colorHex: '#0284C7', sortOrder: 1),
     const MenuCategory(id: 2, name: 'Appetizers', icon: 'tapas_rounded', colorHex: '#D97706', sortOrder: 2),
@@ -282,6 +304,7 @@ class MenuProvider extends ChangeNotifier {
 
   void addItem(MenuItem item) {
     _items.add(item);
+    _persist();
     notifyListeners();
   }
 
@@ -289,28 +312,33 @@ class MenuProvider extends ChangeNotifier {
     final index = _items.indexWhere((it) => it.id == item.id);
     if (index >= 0) {
       _items[index] = item;
+      _persist();
       notifyListeners();
     }
   }
 
   void deleteItem(int itemId) {
     _items.removeWhere((it) => it.id == itemId);
+    _persist();
     notifyListeners();
   }
 
   void setCategories(List<MenuCategory> categories) {
     _categories.clear();
     _categories.addAll(categories);
+    _persist();
     notifyListeners();
   }
 
   void addCategory(MenuCategory category) {
     _categories.add(category);
+    _persist();
     notifyListeners();
   }
 
   void deleteCategory(int categoryId) {
     _categories.removeWhere((c) => c.id == categoryId);
+    _persist();
     notifyListeners();
   }
 
@@ -318,6 +346,7 @@ class MenuProvider extends ChangeNotifier {
     final index = _items.indexWhere((it) => it.id == itemId);
     if (index >= 0) {
       _items[index] = _items[index].copyWith(isAvailable: isAvailable);
+      _persist();
       notifyListeners();
     }
   }
@@ -331,6 +360,7 @@ class MenuProvider extends ChangeNotifier {
         salesCount: newCount,
         isTopSelling: newCount >= 5,
       );
+      _persist();
       notifyListeners();
     }
   }
@@ -339,12 +369,14 @@ class MenuProvider extends ChangeNotifier {
     for (int i = 0; i < _items.length; i++) {
       _items[i] = _items[i].copyWith(salesCount: 0, isTopSelling: false);
     }
+    _persist();
     notifyListeners();
   }
 
   void replaceAllItems(List<MenuItem> newItems) {
     _items.clear();
     _items.addAll(newItems);
+    _persist();
     notifyListeners();
   }
 }

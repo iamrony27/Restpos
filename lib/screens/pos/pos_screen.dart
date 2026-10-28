@@ -552,6 +552,150 @@ class _PosScreenState extends State<PosScreen> {
     );
   }
 
+  void _showAddCustomItemDialog(BuildContext context) {
+    final nameController = TextEditingController();
+    final priceController = TextEditingController();
+    DietaryType selectedDietary = DietaryType.veg;
+    bool saveToMenu = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (dialogCtx, setDialogState) {
+            final theme = Theme.of(dialogCtx);
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: CulinaryColors.flameOrange.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.add_shopping_cart_rounded, color: CulinaryColors.flameOrange, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text('Quick Custom Item', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      autofocus: true,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: const InputDecoration(
+                        labelText: 'Item / Dish Name',
+                        hintText: 'e.g. Special Dessert, Extra Gravy',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.restaurant_menu_rounded),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: priceController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        labelText: 'Price (₹)',
+                        hintText: '0.00',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.currency_rupee_rounded),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text('Dietary Type', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        ChoiceChip(
+                          avatar: const DietaryBadge(type: DietaryType.veg, size: 10),
+                          label: const Text('Veg'),
+                          selected: selectedDietary == DietaryType.veg,
+                          onSelected: (_) => setDialogState(() => selectedDietary = DietaryType.veg),
+                        ),
+                        const SizedBox(width: 8),
+                        ChoiceChip(
+                          avatar: const DietaryBadge(type: DietaryType.nonVeg, size: 10),
+                          label: const Text('Non-Veg'),
+                          selected: selectedDietary == DietaryType.nonVeg,
+                          onSelected: (_) => setDialogState(() => selectedDietary = DietaryType.nonVeg),
+                        ),
+                        const SizedBox(width: 8),
+                        ChoiceChip(
+                          avatar: const DietaryBadge(type: DietaryType.egg, size: 10),
+                          label: const Text('Egg'),
+                          selected: selectedDietary == DietaryType.egg,
+                          onSelected: (_) => setDialogState(() => selectedDietary = DietaryType.egg),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Save to menu catalog', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                      subtitle: const Text('Keep available for future orders', style: TextStyle(fontSize: 12)),
+                      value: saveToMenu,
+                      onChanged: (val) => setDialogState(() => saveToMenu = val),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    final name = nameController.text.trim();
+                    final priceRupees = double.tryParse(priceController.text.trim()) ?? 0.0;
+                    if (name.isEmpty) {
+                      AppNotification.showError(dialogCtx, 'Please enter an item name');
+                      return;
+                    }
+                    if (priceRupees < 0) {
+                      AppNotification.showError(dialogCtx, 'Price cannot be negative');
+                      return;
+                    }
+                    final pricePaise = (priceRupees * 100).round();
+                    final customItem = MenuItem(
+                      id: DateTime.now().millisecondsSinceEpoch,
+                      categoryId: 0,
+                      name: name,
+                      pricePaise: pricePaise,
+                      dietaryType: selectedDietary,
+                    );
+                    if (saveToMenu) {
+                      context.read<MenuProvider>().addItem(customItem);
+                    }
+                    context.read<PosProvider>().addToCart(customItem);
+                    Navigator.pop(dialogCtx);
+                    AppNotification.showSuccess(
+                      context,
+                      'Added "$name" to cart (${CurrencyFormatter.formatPaise(pricePaise)})',
+                      title: 'Item Added',
+                    );
+                  },
+                  child: const Text('Add to Cart'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _showTableSelector(BuildContext context) {
     final tableProvider = context.read<TableProvider>();
     final posProvider = context.read<PosProvider>();
@@ -867,6 +1011,17 @@ class _PosScreenState extends State<PosScreen> {
                   label: const Text('Non-Veg'),
                   selected: _dietaryFilter == DietaryType.nonVeg,
                   onSelected: (sel) => setState(() => _dietaryFilter = sel ? DietaryType.nonVeg : null),
+                ),
+                const VerticalDivider(width: 16),
+                ActionChip(
+                  avatar: const Icon(Icons.add_circle_outline_rounded, size: 16, color: CulinaryColors.flameOrange),
+                  label: const Text(
+                    '+ Custom Item',
+                    style: TextStyle(fontWeight: FontWeight.w700, color: CulinaryColors.flameOrange),
+                  ),
+                  backgroundColor: CulinaryColors.flameOrange.withOpacity(0.08),
+                  side: BorderSide(color: CulinaryColors.flameOrange.withOpacity(0.35)),
+                  onPressed: () => _showAddCustomItemDialog(context),
                 ),
               ],
             ),
@@ -1708,6 +1863,7 @@ class _CartBottomSheet extends StatelessWidget {
     final posProvider = context.watch<PosProvider>();
     final orderProvider = context.read<OrderProvider>();
     final tableProvider = context.read<TableProvider>();
+    final menuProvider = context.read<MenuProvider>();
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.78,
@@ -1924,9 +2080,38 @@ class _CartBottomSheet extends StatelessWidget {
                   order: order,
                   onPaymentConfirmed: () {
                     orderProvider.addOrder(order);
+                    for (final item in order.items) {
+                      menuProvider.recordItemSale(item.menuItem.id, item.quantity);
+                    }
                     if (order.tableId != null) {
                       tableProvider.freeTable(order.tableId!);
                     }
+                    posProvider.clearCart();
+                    AppNotification.showSuccess(
+                      context,
+                      'Order #${order.orderNumber} placed successfully',
+                      title: 'Payment Received',
+                    );
+                  },
+                  onPaymentConfirmedWithMethod: (chosenMethod) {
+                    final settledOrder = order.copyWith(
+                      paymentMethod: chosenMethod,
+                      status: OrderStatus.paid,
+                      completedAt: DateTime.now(),
+                    );
+                    orderProvider.addOrder(settledOrder);
+                    for (final item in settledOrder.items) {
+                      menuProvider.recordItemSale(item.menuItem.id, item.quantity);
+                    }
+                    if (settledOrder.tableId != null) {
+                      tableProvider.freeTable(settledOrder.tableId!);
+                    }
+                    posProvider.clearCart();
+                    AppNotification.showSuccess(
+                      context,
+                      'Order #${settledOrder.orderNumber} settled via ${chosenMethod.name.toUpperCase()}',
+                      title: 'Payment Received',
+                    );
                   },
                 ),
               );

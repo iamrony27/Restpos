@@ -13,6 +13,7 @@ import 'package:flutter_restaurant_pos/providers/order_provider.dart';
 import 'package:provider/provider.dart';
 
 
+import 'package:flutter_restaurant_pos/services/local_storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -318,6 +319,36 @@ void main() {
     expect(orderProvider.orders.isEmpty, isTrue);
     expect(tableProvider.occupiedCount, equals(0));
     expect(tableProvider.billedCount, equals(0));
+  });
+
+  test('LocalStorageService persists and restores profile and menu items', () async {
+    SharedPreferences.setMockInitialValues({});
+
+    const profile = RestaurantProfile(
+      name: 'Spice Garden',
+      phone: '9876543210',
+      isTaxInclusive: true,
+      gstRatePercent: 5.0,
+    );
+    await LocalStorageService.saveProfile(profile);
+    final loadedProfile = await LocalStorageService.loadProfile();
+    expect(loadedProfile, isNotNull);
+    expect(loadedProfile!.name, equals('Spice Garden'));
+    expect(loadedProfile.isTaxInclusive, isTrue);
+
+    const customItem = MenuItem(
+      id: 9999,
+      categoryId: 0,
+      name: 'Chef Special Kheer',
+      pricePaise: 12000,
+      dietaryType: DietaryType.veg,
+    );
+    await LocalStorageService.saveMenuItems([customItem]);
+    final loadedItems = await LocalStorageService.loadMenuItems();
+    expect(loadedItems, isNotNull);
+    expect(loadedItems!.length, equals(1));
+    expect(loadedItems.first.name, equals('Chef Special Kheer'));
+    expect(loadedItems.first.pricePaise, equals(12000));
   });
 }
 
