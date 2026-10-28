@@ -15,6 +15,7 @@ import '../setup/setup_wizard_screen.dart';
 
 enum ChartMode { itemWise, amountWise, history }
 enum ItemsSoldInterval { today, weekly, monthly }
+enum TrendTimeRange { last15Days, last12Months, last10Years }
 
 class DashboardScreen extends StatefulWidget {
   final Function(int) onNavigateTab;
@@ -28,6 +29,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   ChartMode _chartMode = ChartMode.amountWise;
   ItemsSoldInterval _itemsInterval = ItemsSoldInterval.today;
+  TrendTimeRange _trendRange = TrendTimeRange.last15Days;
   int _touchedChartIndex = -1;
 
   @override
@@ -467,33 +469,104 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final totalValue = chartData.fold<double>(0.0, (sum, d) => sum + (d['value'] as double));
 
-    // Daily turnover history calculations for 7 days
+    // Turnover history calculations based on selected TrendTimeRange
     final now = DateTime.now();
-    const weekdayNames = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    final List<Map<String, dynamic>> dailyHistory = [];
-    double maxDailyRevenue = 0.0;
-    double sevenDayRevenue = 0.0;
-    int sevenDayBills = 0;
+    const monthShortNames = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final List<Map<String, dynamic>> trendHistory = [];
+    double maxTrendRevenue = 0.0;
+    double totalTrendRevenue = 0.0;
+    int totalTrendBills = 0;
+    String trendSubtitle = '';
+    String stat1Label = '';
+    String stat2Label = '';
+    double statAverage = 0.0;
 
-    for (int i = 6; i >= 0; i--) {
-      final day = DateTime(now.year, now.month, now.day).subtract(Duration(days: i));
-      final nextDay = day.add(const Duration(days: 1));
+    if (_trendRange == TrendTimeRange.last15Days) {
+      trendSubtitle = 'Past 15 days turnover track';
+      stat1Label = '15-Day Total';
+      stat2Label = 'Daily Average';
 
-      final dayOrders = orderProvider.completedOrders.where((o) =>
-          !o.createdAt.isBefore(day) && o.createdAt.isBefore(nextDay)).toList();
+      for (int i = 14; i >= 0; i--) {
+        final day = DateTime(now.year, now.month, now.day).subtract(Duration(days: i));
+        final nextDay = day.add(const Duration(days: 1));
 
-      final dayRevenue = dayOrders.fold<double>(0.0, (sum, o) => sum + o.totalRupees);
-      if (dayRevenue > maxDailyRevenue) maxDailyRevenue = dayRevenue;
-      sevenDayRevenue += dayRevenue;
-      sevenDayBills += dayOrders.length;
+        final dayOrders = orderProvider.completedOrders.where((o) =>
+            !o.createdAt.isBefore(day) && o.createdAt.isBefore(nextDay)).toList();
 
-      dailyHistory.add({
-        'day': day,
-        'label': i == 0 ? 'Today' : weekdayNames[day.weekday],
-        'dateStr': '${day.day}/${day.month}',
-        'orders': dayOrders.length,
-        'revenue': dayRevenue,
-      });
+        final dayRevenue = dayOrders.fold<double>(0.0, (sum, o) => sum + o.totalRupees);
+        if (dayRevenue > maxTrendRevenue) maxTrendRevenue = dayRevenue;
+        totalTrendRevenue += dayRevenue;
+        totalTrendBills += dayOrders.length;
+
+        trendHistory.add({
+          'day': day,
+          'label': i == 0 ? 'Today' : '${day.day}/${day.month}',
+          'dateStr': '${day.day} ${monthShortNames[day.month]} ${day.year}',
+          'orders': dayOrders.length,
+          'revenue': dayRevenue,
+        });
+      }
+      statAverage = totalTrendRevenue / 15;
+    } else if (_trendRange == TrendTimeRange.last12Months) {
+      trendSubtitle = 'Past 12 months turnover track';
+      stat1Label = '12-Month Total';
+      stat2Label = 'Monthly Avg';
+
+      for (int i = 11; i >= 0; i--) {
+        int targetYear = now.year;
+        int targetMonth = now.month - i;
+        while (targetMonth <= 0) {
+          targetMonth += 12;
+          targetYear -= 1;
+        }
+
+        final startOfMonth = DateTime(targetYear, targetMonth, 1);
+        final startOfNextMonth = (targetMonth == 12)
+            ? DateTime(targetYear + 1, 1, 1)
+            : DateTime(targetYear, targetMonth + 1, 1);
+
+        final monthOrders = orderProvider.completedOrders.where((o) =>
+            !o.createdAt.isBefore(startOfMonth) && o.createdAt.isBefore(startOfNextMonth)).toList();
+
+        final monthRevenue = monthOrders.fold<double>(0.0, (sum, o) => sum + o.totalRupees);
+        if (monthRevenue > maxTrendRevenue) maxTrendRevenue = monthRevenue;
+        totalTrendRevenue += monthRevenue;
+        totalTrendBills += monthOrders.length;
+
+        trendHistory.add({
+          'label': monthShortNames[targetMonth],
+          'dateStr': '${monthShortNames[targetMonth]} $targetYear',
+          'orders': monthOrders.length,
+          'revenue': monthRevenue,
+        });
+      }
+      statAverage = totalTrendRevenue / 12;
+    } else {
+      trendSubtitle = 'Past 10 years turnover track';
+      stat1Label = '10-Year Total';
+      stat2Label = 'Annual Avg';
+
+      for (int i = 9; i >= 0; i--) {
+        final targetYear = now.year - i;
+        final startOfYear = DateTime(targetYear, 1, 1);
+        final startOfNextYear = DateTime(targetYear + 1, 1, 1);
+
+        final yearOrders = orderProvider.completedOrders.where((o) =>
+            !o.createdAt.isBefore(startOfYear) && o.createdAt.isBefore(startOfNextYear)).toList();
+
+        final yearRevenue = yearOrders.fold<double>(0.0, (sum, o) => sum + o.totalRupees);
+        if (yearRevenue > maxTrendRevenue) maxTrendRevenue = yearRevenue;
+        totalTrendRevenue += yearRevenue;
+        totalTrendBills += yearOrders.length;
+
+        trendHistory.add({
+          'label': "'${targetYear.toString().substring(2)}",
+          'dateStr': 'Year $targetYear',
+          'orders': yearOrders.length,
+          'revenue': yearRevenue,
+        });
+      }
+      statAverage = totalTrendRevenue / 10;
     }
 
     return Card(
@@ -519,7 +592,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       Text(
                         isHistory
-                            ? 'Past 7 days turnover track'
+                            ? trendSubtitle
                             : (isItemWise ? 'Quantity-wise item volume' : 'Revenue-wise turnover'),
                         style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
                       ),
@@ -559,10 +632,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
             if (isHistory) ...[
-              _buildHistoryLineChart(theme, dailyHistory, maxDailyRevenue, sevenDayRevenue, sevenDayBills),
+              const SizedBox(height: 12),
+              // Time Range Selector for Trend (Last 15 Days, Last 12 Months, Last 10 Years)
+              Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    _buildTrendRangePill(
+                      theme: theme,
+                      range: TrendTimeRange.last15Days,
+                      label: 'Last 15 Days',
+                    ),
+                    _buildTrendRangePill(
+                      theme: theme,
+                      range: TrendTimeRange.last12Months,
+                      label: 'Last 12 Months',
+                    ),
+                    _buildTrendRangePill(
+                      theme: theme,
+                      range: TrendTimeRange.last10Years,
+                      label: 'Last 10 Years',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              _buildHistoryLineChart(
+                theme,
+                trendHistory,
+                maxTrendRevenue,
+                totalTrendRevenue,
+                totalTrendBills,
+                stat1Label,
+                stat2Label,
+                statAverage,
+              ),
             ] else ...[
+              const SizedBox(height: 16),
               Row(
               children: [
                 // Circular Donut Chart
@@ -716,8 +827,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ThemeData theme,
     List<Map<String, dynamic>> dailyHistory,
     double maxDailyRevenue,
-    double sevenDayRevenue,
-    int sevenDayBills,
+    double totalRevenue,
+    int totalBills,
+    String stat1Label,
+    String stat2Label,
+    double statAverage,
   ) {
     final effectiveMax = maxDailyRevenue > 0 ? maxDailyRevenue : 500.0;
     final double step;
@@ -796,15 +910,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       final idx = val.toInt();
                       if (idx < 0 || idx >= dailyHistory.length) return const SizedBox.shrink();
                       final item = dailyHistory[idx];
-                      final isToday = idx == dailyHistory.length - 1;
+                      final isLast = idx == dailyHistory.length - 1;
+
+                      // Control label frequency to avoid overlapping
+                      final bool shouldShow;
+                      if (_trendRange == TrendTimeRange.last15Days) {
+                        shouldShow = idx % 3 == 0 || isLast;
+                      } else if (_trendRange == TrendTimeRange.last12Months) {
+                        shouldShow = idx % 2 == 0 || isLast;
+                      } else {
+                        shouldShow = idx % 2 == 0 || isLast;
+                      }
+
+                      if (!shouldShow) return const SizedBox.shrink();
+
                       return Padding(
                         padding: const EdgeInsets.only(top: 6),
                         child: Text(
                           item['label'] as String,
                           style: TextStyle(
                             fontSize: 10,
-                            fontWeight: isToday ? FontWeight.w900 : FontWeight.w600,
-                            color: isToday ? CulinaryColors.flameOrange : theme.colorScheme.outline,
+                            fontWeight: isLast ? FontWeight.w900 : FontWeight.w600,
+                            color: isLast ? CulinaryColors.flameOrange : theme.colorScheme.outline,
                           ),
                         ),
                       );
@@ -857,10 +984,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   dotData: FlDotData(
                     show: true,
                     getDotPainter: (spot, percent, barData, index) {
-                      final isToday = index == dailyHistory.length - 1;
+                      final isLast = index == dailyHistory.length - 1;
                       return FlDotCirclePainter(
-                        radius: isToday ? 5.5 : 4.0,
-                        color: isToday ? CulinaryColors.flameOrange : Colors.white,
+                        radius: isLast ? 5.5 : 4.0,
+                        color: isLast ? CulinaryColors.flameOrange : Colors.white,
                         strokeWidth: 2.2,
                         strokeColor: CulinaryColors.flameOrange,
                       );
@@ -883,7 +1010,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        // 7-day stats summary bar
+        // Trend stats summary bar
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
@@ -897,15 +1024,59 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildHistoryStatCol('7-Day Total', '₹${sevenDayRevenue.toStringAsFixed(0)}', CulinaryColors.flameOrange),
+              _buildHistoryStatCol(stat1Label, '₹${totalRevenue.toStringAsFixed(0)}', CulinaryColors.flameOrange),
               Container(width: 1, height: 24, color: theme.colorScheme.outlineVariant.withOpacity(0.4)),
-              _buildHistoryStatCol('Daily Average', '₹${(sevenDayRevenue / 7).toStringAsFixed(0)}', CulinaryColors.royalBlue),
+              _buildHistoryStatCol(stat2Label, '₹${statAverage.toStringAsFixed(0)}', CulinaryColors.royalBlue),
               Container(width: 1, height: 24, color: theme.colorScheme.outlineVariant.withOpacity(0.4)),
-              _buildHistoryStatCol('Settled Bills', '$sevenDayBills paid', CulinaryColors.emeraldGreen),
+              _buildHistoryStatCol('Settled Bills', '$totalBills paid', CulinaryColors.emeraldGreen),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildTrendRangePill({
+    required ThemeData theme,
+    required TrendTimeRange range,
+    required String label,
+  }) {
+    final isSelected = _trendRange == range;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          if (_trendRange != range) {
+            NativeApiChannel.triggerNativeHaptic();
+            setState(() => _trendRange = range);
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: isSelected ? theme.colorScheme.surface : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    )
+                  ]
+                : null,
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+              color: isSelected ? CulinaryColors.flameOrange : theme.colorScheme.outline,
+            ),
+          ),
+        ),
+      ),
     );
   }
 
