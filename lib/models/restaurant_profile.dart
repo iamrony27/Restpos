@@ -30,7 +30,7 @@ class RestaurantProfile {
     this.isGstEnabled = true,
     this.gstRatePercent = 5.0,
     this.isRoundOffEnabled = true,
-    this.isSetupCompleted = true,
+    this.isSetupCompleted = false,
     this.isTaxInclusive = false,
     this.defaultTaxBps = 500,
   });

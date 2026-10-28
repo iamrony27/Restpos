@@ -836,16 +836,17 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Icon(Icons.print_rounded, color: theme.colorScheme.primary),
-                          const SizedBox(width: 8),
-                          Text('ESC/POS Thermal Printing',
-                              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                        ],
+                      Icon(Icons.print_rounded, color: theme.colorScheme.primary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'ESC/POS Thermal Printing',
+                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
@@ -957,36 +958,51 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  Row(
+                  const SizedBox(height: 14),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Paper Width:',
+                        'Paper Width',
                         style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: theme.colorScheme.onSurface),
                       ),
-                      const SizedBox(width: 12),
-                      ChoiceChip(
-                        label: const Text('58mm (2-inch)'),
-                        selected: !_is80mmPaper,
-                        onSelected: (selected) async {
-                          if (selected) {
-                            setState(() => _is80mmPaper = false);
-                            final prefs = await SharedPreferences.getInstance();
-                            await prefs.setBool('bt_printer_80mm', false);
-                          }
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      ChoiceChip(
-                        label: const Text('80mm (3-inch)'),
-                        selected: _is80mmPaper,
-                        onSelected: (selected) async {
-                          if (selected) {
-                            setState(() => _is80mmPaper = true);
-                            final prefs = await SharedPreferences.getInstance();
-                            await prefs.setBool('bt_printer_80mm', true);
-                          }
-                        },
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ChoiceChip(
+                              label: const SizedBox(
+                                width: double.infinity,
+                                child: Text('58mm (2-inch)', textAlign: TextAlign.center),
+                              ),
+                              selected: !_is80mmPaper,
+                              onSelected: (selected) async {
+                                if (selected) {
+                                  setState(() => _is80mmPaper = false);
+                                  final prefs = await SharedPreferences.getInstance();
+                                  await prefs.setBool('bt_printer_80mm', false);
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ChoiceChip(
+                              label: const SizedBox(
+                                width: double.infinity,
+                                child: Text('80mm (3-inch)', textAlign: TextAlign.center),
+                              ),
+                              selected: _is80mmPaper,
+                              onSelected: (selected) async {
+                                if (selected) {
+                                  setState(() => _is80mmPaper = true);
+                                  final prefs = await SharedPreferences.getInstance();
+                                  await prefs.setBool('bt_printer_80mm', true);
+                                }
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

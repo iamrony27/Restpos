@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/color_schemes.dart';
 import '../home_shell_screen.dart';
+import '../setup/setup_wizard_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -47,25 +49,47 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     _animController.forward();
 
-    // Navigate to Home Shell after smooth branded loading
-    _timer = Timer(const Duration(milliseconds: 2000), _navigateToHome);
+    // Navigate to Setup Wizard or Home Shell after branded loading
+    _timer = Timer(const Duration(milliseconds: 2000), _checkSetupAndNavigate);
   }
 
-  void _navigateToHome() {
+  Future<void> _checkSetupAndNavigate() async {
     if (!mounted) return;
     _timer?.cancel();
-    Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 600),
-        pageBuilder: (context, animation, secondaryAnimation) => FadeTransition(
-          opacity: animation,
-          child: HomeShellScreen(
-            onToggleTheme: widget.onToggleTheme,
-            isDarkMode: widget.isDarkMode,
+
+    final prefs = await SharedPreferences.getInstance();
+    final isSetupCompleted = prefs.getBool('is_setup_completed') ?? false;
+
+    if (!mounted) return;
+
+    if (!isSetupCompleted) {
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 600),
+          pageBuilder: (context, animation, secondaryAnimation) => FadeTransition(
+            opacity: animation,
+            child: SetupWizardScreen(
+              isInitialSetup: true,
+              onToggleTheme: widget.onToggleTheme,
+              isDarkMode: widget.isDarkMode,
+            ),
           ),
         ),
-      ),
-    );
+      );
+    } else {
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 600),
+          pageBuilder: (context, animation, secondaryAnimation) => FadeTransition(
+            opacity: animation,
+            child: HomeShellScreen(
+              onToggleTheme: widget.onToggleTheme,
+              isDarkMode: widget.isDarkMode,
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -80,7 +104,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A), // Deep Slate Obsidian
       body: GestureDetector(
-        onTap: _navigateToHome, // Tap to immediately skip splash
+        onTap: _checkSetupAndNavigate, // Tap to immediately skip splash
         behavior: HitTestBehavior.opaque,
         child: SafeArea(
           child: Stack(

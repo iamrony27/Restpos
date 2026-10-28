@@ -13,8 +13,23 @@ import 'package:flutter_restaurant_pos/providers/order_provider.dart';
 import 'package:provider/provider.dart';
 
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({'is_setup_completed': true});
+  });
+
+  testWidgets('Fresh install shows SetupWizardScreen when is_setup_completed is false', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({'is_setup_completed': false});
+    await tester.pumpWidget(const RestaurantPosApp());
+    await tester.pumpAndSettle();
+    expect(find.text('Welcome to Rest POS'), findsOneWidget);
+    expect(find.text('Skip'), findsOneWidget);
+  });
+
   testWidgets('Restaurant POS smoke test', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({'is_setup_completed': true});
     await tester.pumpWidget(const RestaurantPosApp());
     await tester.pumpAndSettle();
     expect(find.text('Spice Garden Restaurant'), findsOneWidget);

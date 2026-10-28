@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/animations/bouncing_button.dart';
+import '../../core/animations/smooth_page_route.dart';
 import '../../core/channels/native_api_channel.dart';
 import '../../core/theme/color_schemes.dart';
 import '../../core/utils/app_notification.dart';
@@ -8,13 +10,18 @@ import '../../providers/menu_provider.dart';
 import '../../providers/pos_provider.dart';
 import '../../widgets/dietary_badge.dart';
 import '../../widgets/developer_support_section.dart';
+import '../home_shell_screen.dart';
 
 class SetupWizardScreen extends StatefulWidget {
   final bool isInitialSetup;
+  final VoidCallback? onToggleTheme;
+  final bool isDarkMode;
 
   const SetupWizardScreen({
     super.key,
     this.isInitialSetup = false,
+    this.onToggleTheme,
+    this.isDarkMode = false,
   });
 
   @override
@@ -119,7 +126,23 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
     }
   }
 
-  void _finishSetup() {
+  Future<void> _skipSetup() async {
+    NativeApiChannel.triggerNativeHaptic();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_setup_completed', true);
+
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      SmoothPageRoute(
+        page: HomeShellScreen(
+          onToggleTheme: widget.onToggleTheme ?? () {},
+          isDarkMode: widget.isDarkMode,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _finishSetup() async {
     NativeApiChannel.triggerNativeHaptic();
     final pos = Provider.of<PosProvider>(context, listen: false);
     final menu = Provider.of<MenuProvider>(context, listen: false);
@@ -151,13 +174,29 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
 
     pos.updateProfile(updatedProfile);
 
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_setup_completed', true);
+
+    if (!mounted) return;
+
     AppNotification.showSuccess(
       context,
       'Restaurant Setup Saved Successfully!',
-      title: 'Profile Updated',
+      title: 'Setup Complete 🎉',
     );
 
-    Navigator.pop(context);
+    if (widget.isInitialSetup) {
+      Navigator.of(context).pushReplacement(
+        SmoothPageRoute(
+          page: HomeShellScreen(
+            onToggleTheme: widget.onToggleTheme ?? () {},
+            isDarkMode: widget.isDarkMode,
+          ),
+        ),
+      );
+    } else {
+      Navigator.pop(context);
+    }
   }
 
   @override
@@ -167,13 +206,30 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Restaurant Setup Wizard',
+          widget.isInitialSetup ? 'Welcome to Rest POS' : 'Restaurant Setup Wizard',
           style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: widget.isInitialSetup
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () => Navigator.pop(context),
+              ),
+        automaticallyImplyLeading: !widget.isInitialSetup,
+        actions: [
+          if (widget.isInitialSetup)
+            TextButton(
+              onPressed: _skipSetup,
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+              child: const Text(
+                'Skip',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+        ],
       ),
       body: SafeArea(
         child: Column(
