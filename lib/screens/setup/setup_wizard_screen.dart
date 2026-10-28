@@ -380,6 +380,8 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
         const SizedBox(height: 4),
         Text(
           title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: 11,
             fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
@@ -970,7 +972,8 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
               if (_activeCategoryFilterId != 0) ...[
                 Builder(
                   builder: (ctx) {
-                    final currentCat = menu.categories.firstWhere((c) => c.id == _activeCategoryFilterId);
+                    final currentCat = menu.categories.where((c) => c.id == _activeCategoryFilterId).firstOrNull;
+                    if (currentCat == null) return const SizedBox.shrink();
                     final isCatEnabled = _selectedCategoryIds.contains(currentCat.id);
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1135,7 +1138,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                _buildReviewRow('Restaurant Name', _nameController.text.isEmpty ? 'Spice Garden' : _nameController.text),
+                _buildReviewRow('Restaurant Name', _nameController.text.trim().isEmpty ? 'Rest POS' : _nameController.text.trim()),
                 _buildReviewRow('Tagline', _taglineController.text),
                 _buildReviewRow('GST Status', _isGstEnabled ? 'Enabled (${_gstRatePercent.toStringAsFixed(0)}%)' : 'Disabled (Non-GST)'),
                 if (_isGstEnabled) ...[

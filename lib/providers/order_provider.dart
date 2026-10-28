@@ -41,25 +41,29 @@ class OrderProvider extends ChangeNotifier {
 
   int get itemsSoldToday {
     final now = DateTime.now();
-    final todayOrders = completedOrders.where((o) =>
-        o.createdAt.year == now.year &&
-        o.createdAt.month == now.month &&
-        o.createdAt.day == now.day);
+    final todayOrders = completedOrders.where((o) {
+      final d = o.completedAt ?? o.createdAt;
+      return d.year == now.year && d.month == now.month && d.day == now.day;
+    });
     return todayOrders.fold<int>(0, (sum, o) => sum + o.items.fold<int>(0, (s, i) => s + i.quantity));
   }
 
   int get itemsSoldThisWeek {
     final now = DateTime.now();
     final sevenDaysAgo = now.subtract(const Duration(days: 7));
-    final weekOrders = completedOrders.where((o) => o.createdAt.isAfter(sevenDaysAgo));
+    final weekOrders = completedOrders.where((o) {
+      final d = o.completedAt ?? o.createdAt;
+      return d.isAfter(sevenDaysAgo);
+    });
     return weekOrders.fold<int>(0, (sum, o) => sum + o.items.fold<int>(0, (s, i) => s + i.quantity));
   }
 
   int get itemsSoldThisMonth {
     final now = DateTime.now();
-    final monthOrders = completedOrders.where((o) =>
-        o.createdAt.year == now.year &&
-        o.createdAt.month == now.month);
+    final monthOrders = completedOrders.where((o) {
+      final d = o.completedAt ?? o.createdAt;
+      return d.year == now.year && d.month == now.month;
+    });
     return monthOrders.fold<int>(0, (sum, o) => sum + o.items.fold<int>(0, (s, i) => s + i.quantity));
   }
 

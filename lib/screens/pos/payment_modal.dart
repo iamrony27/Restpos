@@ -258,19 +258,22 @@ class _PaymentModalState extends State<PaymentModal> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       alignment: Alignment.center,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.print_rounded, color: Colors.white, size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Confirm & Print Receipt',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.print_rounded, color: Colors.white, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Confirm & Print Receipt',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),

@@ -22,7 +22,7 @@ class SalesReportScreen extends StatefulWidget {
 
 class _SalesReportScreenState extends State<SalesReportScreen> {
   final ScrollController _scrollController = ScrollController();
-  double _scrollOffset = 0.0;
+  final ValueNotifier<double> _scrollOffset = ValueNotifier<double>(0.0);
   ReportPeriodType _periodType = ReportPeriodType.monthly;
   late String _selectedPeriod;
   bool _isGeneratingPdf = false;
@@ -60,10 +60,13 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
     _selectedPeriod = curMonth;
 
     _scrollController.addListener(() {
-      if (mounted) {
-        setState(() {
-          _scrollOffset = _scrollController.offset;
-        });
+      final offset = _scrollController.offset;
+      if (offset >= 0 && offset <= 80) {
+        _scrollOffset.value = offset;
+      } else if (offset > 80 && _scrollOffset.value != 80) {
+        _scrollOffset.value = 80;
+      } else if (offset < 0 && _scrollOffset.value != 0) {
+        _scrollOffset.value = 0;
       }
     });
   }
@@ -71,6 +74,7 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _scrollOffset.dispose();
     super.dispose();
   }
 
@@ -170,50 +174,58 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
       categoryBreakdown['All Categories'] = 0.0;
     }
 
-    final double scrollProgress = (_scrollOffset / 80.0).clamp(0.0, 1.0);
-    final appBarBg = Color.lerp(
-      theme.colorScheme.surface,
-      CulinaryColors.flameOrange,
-      scrollProgress,
-    );
-    final appBarFg = Color.lerp(
-      theme.colorScheme.onSurface,
-      Colors.white,
-      scrollProgress,
-    );
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Sales & GST Reports',
-          style: TextStyle(
-            color: appBarFg,
-            fontWeight: FontWeight.w800,
-          ),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: AnimatedBuilder(
+          animation: _scrollOffset,
+          builder: (context, _) {
+            final double scrollProgress = (_scrollOffset.value / 80.0).clamp(0.0, 1.0);
+            final appBarBg = Color.lerp(
+              theme.colorScheme.surface,
+              CulinaryColors.flameOrange,
+              scrollProgress,
+            );
+            final appBarFg = Color.lerp(
+              theme.colorScheme.onSurface,
+              Colors.white,
+              scrollProgress,
+            );
+
+            return AppBar(
+              title: Text(
+                'Sales & GST Reports',
+                style: TextStyle(
+                  color: appBarFg,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              centerTitle: false,
+              backgroundColor: appBarBg,
+              foregroundColor: appBarFg,
+              elevation: scrollProgress * 4.0,
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.share_rounded, color: appBarFg),
+                  tooltip: 'Export & Share PDF',
+                  onPressed: () => _exportPdf(
+                    pos: pos,
+                    grossSales: grossSales,
+                    taxableBase: taxableBase,
+                    cgst: cgst,
+                    sgst: sgst,
+                    totalGst: totalGst,
+                    roundOff: roundOff,
+                    netRevenue: netRevenue,
+                    orderCount: orderCount,
+                    paymentBreakdown: paymentBreakdown,
+                    categoryBreakdown: categoryBreakdown,
+                  ),
+                ),
+              ],
+            );
+          },
         ),
-        centerTitle: false,
-        backgroundColor: appBarBg,
-        foregroundColor: appBarFg,
-        elevation: scrollProgress * 4.0,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.share_rounded, color: appBarFg),
-            tooltip: 'Export & Share PDF',
-            onPressed: () => _exportPdf(
-              pos: pos,
-              grossSales: grossSales,
-              taxableBase: taxableBase,
-              cgst: cgst,
-              sgst: sgst,
-              totalGst: totalGst,
-              roundOff: roundOff,
-              netRevenue: netRevenue,
-              orderCount: orderCount,
-              paymentBreakdown: paymentBreakdown,
-              categoryBreakdown: categoryBreakdown,
-            ),
-          ),
-        ],
       ),
       body: ListView(
         controller: _scrollController,

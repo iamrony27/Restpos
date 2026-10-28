@@ -114,13 +114,14 @@ Cashier: Counter POS-1
 QTY  ITEM                  TOTAL
 --------------------------------
 ${order.items.map((i) {
-      final name = i.menuItem.name.padRight(18).substring(0, 18);
+      final rawName = i.menuItem.name;
+      final name = rawName.length > 18 ? rawName.substring(0, 18) : rawName.padRight(18);
       return '${i.quantity}x  $name ₹${i.lineTotalRupees.toStringAsFixed(0)}';
     }).join('\n')}
 --------------------------------
 $taxableLabel: ₹${taxableAmount.toStringAsFixed(2)}
 $gstLine
-$discountLine${roundOffLine}GRAND TOTAL: ₹${order.totalRupees.toStringAsFixed(0)}
+$discountLine${roundOffLine}GRAND TOTAL: ₹${(order.roundOffPaise != 0 || order.totalPaise % 100 == 0) ? order.totalRupees.toStringAsFixed(0) : order.totalRupees.toStringAsFixed(2)}
 Payment Mode: ${pMethod.name.toUpperCase()}
 ================================
      Thank You! Visit Again.

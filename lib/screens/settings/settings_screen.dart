@@ -362,9 +362,9 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
     );
   }
 
-  void _editFssaiDialog(BuildContext context, PosProvider pos) {
+  Future<void> _editFssaiDialog(BuildContext context, PosProvider pos) async {
     final controller = TextEditingController(text: pos.fssaiNumber);
-    showDialog(
+    await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Edit FSSAI License Number'),
@@ -393,6 +393,7 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
         ],
       ),
     );
+    controller.dispose();
   }
 
   @override

@@ -879,6 +879,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   getTooltipItems: (touchedSpots) {
                     return touchedSpots.map((spot) {
                       final idx = spot.x.toInt();
+                      if (idx < 0 || idx >= dailyHistory.length) return null;
                       final item = dailyHistory[idx];
                       return LineTooltipItem(
                         '${item['label']} (${item['dateStr']})\n',

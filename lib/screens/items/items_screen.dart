@@ -139,7 +139,7 @@ class _ItemsScreenState extends State<ItemsScreen> {
     super.dispose();
   }
 
-  void _showAddEditDishDialog(BuildContext context, [MenuItem? existingItem]) {
+  Future<void> _showAddEditDishDialog(BuildContext context, [MenuItem? existingItem]) async {
     NativeApiChannel.triggerNativeHaptic();
     final menuProvider = Provider.of<MenuProvider>(context, listen: false);
     final isEditing = existingItem != null;
@@ -163,7 +163,7 @@ class _ItemsScreenState extends State<ItemsScreen> {
     String? selectedImageUri = existingItem?.imageUri ?? _presetPhotos.first;
     bool isCustomUrlMode = customUrlController.text.isNotEmpty;
 
-    showDialog(
+    await showDialog(
       context: context,
       builder: (dlgContext) {
         return StatefulBuilder(
@@ -467,6 +467,10 @@ class _ItemsScreenState extends State<ItemsScreen> {
         );
       },
     );
+    nameController.dispose();
+    priceController.dispose();
+    skuController.dispose();
+    customUrlController.dispose();
   }
 
   void _confirmDeleteDish(BuildContext context, MenuItem item) {

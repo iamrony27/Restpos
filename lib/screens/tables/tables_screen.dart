@@ -39,7 +39,7 @@ class TablesScreen extends StatelessWidget {
     }
   }
 
-  void _showAddEditTableDialog(BuildContext context, [RestaurantTable? existingTable]) {
+  Future<void> _showAddEditTableDialog(BuildContext context, [RestaurantTable? existingTable]) async {
     final tableProvider = context.read<TableProvider>();
     final isEditing = existingTable != null;
     final nameController = TextEditingController(
@@ -48,7 +48,7 @@ class TablesScreen extends StatelessWidget {
     int capacity = isEditing ? existingTable.seatingCapacity : 4;
     TableStatus status = isEditing ? existingTable.status : TableStatus.available;
 
-    showDialog(
+    await showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
@@ -161,6 +161,7 @@ class TablesScreen extends StatelessWidget {
         ),
       ),
     );
+    nameController.dispose();
   }
 
   void _confirmDeleteTable(BuildContext context, RestaurantTable table) {
