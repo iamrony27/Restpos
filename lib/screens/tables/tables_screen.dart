@@ -335,13 +335,18 @@ class TablesScreen extends StatelessWidget {
           // Floor Status Legend
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildLegendItem('Available (${tableProvider.availableCount})', const Color(0xFF16A34A)),
-                _buildLegendItem('Occupied (${tableProvider.occupiedCount})', const Color(0xFF0284C7)),
-                _buildLegendItem('Billed (${tableProvider.billedCount})', const Color(0xFFD97706)),
-              ],
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildLegendItem('Available (${tableProvider.availableCount})', const Color(0xFF16A34A)),
+                  const SizedBox(width: 8),
+                  _buildLegendItem('Occupied (${tableProvider.occupiedCount})', const Color(0xFF0284C7)),
+                  const SizedBox(width: 8),
+                  _buildLegendItem('Billed (${tableProvider.billedCount})', const Color(0xFFD97706)),
+                ],
+              ),
             ),
           ),
           const Divider(),

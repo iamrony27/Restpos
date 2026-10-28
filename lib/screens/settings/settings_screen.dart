@@ -542,22 +542,26 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: CulinaryColors.emeraldGreen.withOpacity(0.12),
-                              shape: BoxShape.circle,
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: CulinaryColors.emeraldGreen.withOpacity(0.12),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.percent_rounded, color: CulinaryColors.emeraldGreen, size: 20),
                             ),
-                            child: const Icon(Icons.percent_rounded, color: CulinaryColors.emeraldGreen, size: 20),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            'GST Tax Invoicing',
-                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                          ),
-                        ],
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'GST Tax Invoicing',
+                                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       Switch.adaptive(
                         value: pos.isGstEnabled,
@@ -669,22 +673,26 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: CulinaryColors.amethystViolet.withOpacity(0.12),
-                              shape: BoxShape.circle,
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: CulinaryColors.amethystViolet.withOpacity(0.12),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.currency_rupee_rounded, color: CulinaryColors.amethystViolet, size: 20),
                             ),
-                            child: const Icon(Icons.currency_rupee_rounded, color: CulinaryColors.amethystViolet, size: 20),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            'Invoice Round-Off',
-                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                          ),
-                        ],
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Invoice Round-Off',
+                                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       Switch.adaptive(
                         value: pos.isRoundOffEnabled,
@@ -728,22 +736,26 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: CulinaryColors.turmericGold.withOpacity(0.15),
-                              shape: BoxShape.circle,
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: CulinaryColors.turmericGold.withOpacity(0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.verified_user_rounded, color: CulinaryColors.turmericGold, size: 20),
                             ),
-                            child: const Icon(Icons.verified_user_rounded, color: CulinaryColors.turmericGold, size: 20),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            'FSSAI Food Safety License',
-                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                          ),
-                        ],
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'FSSAI Food Safety License',
+                                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.edit_rounded, size: 20),
@@ -762,9 +774,14 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('License No:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                        Text(
-                          profile.fssai.isNotEmpty ? profile.fssai : '11223344556677',
-                          style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1.2, fontSize: 14),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            profile.fssai.isNotEmpty ? profile.fssai : '11223344556677',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1.2, fontSize: 14),
+                          ),
                         ),
                       ],
                     ),
@@ -1001,24 +1018,27 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
                     onPressed: _testPrint,
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.surfaceContainerHigh,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       alignment: Alignment.center,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.receipt_rounded, size: 18, color: theme.colorScheme.primary),
-                          const SizedBox(width: 8),
-                          Text(
-                            _printerConnected
-                                ? 'Print ESC/POS Test Slip & Open Preview'
-                                : 'Preview Test Receipt Slip',
-                            style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w700),
-                          ),
-                        ],
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.receipt_rounded, size: 18, color: theme.colorScheme.primary),
+                            const SizedBox(width: 8),
+                            Text(
+                              _printerConnected
+                                  ? 'Print ESC/POS Test Slip & Open Preview'
+                                  : 'Preview Test Receipt Slip',
+                              style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w700),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -1047,7 +1067,13 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Native Android APIs', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                      Expanded(
+                        child: Text(
+                          'Native Android APIs',
+                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       IconButton(
                         icon: const Icon(Icons.refresh_rounded, size: 20),
                         onPressed: _loadHardwareInfo,
@@ -1208,7 +1234,8 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
+          Expanded(child: Text(label, style: const TextStyle(color: Colors.grey))),
+          const SizedBox(width: 8),
           Flexible(
             child: Text(
               value,

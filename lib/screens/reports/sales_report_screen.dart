@@ -294,7 +294,9 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                Row(
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -453,10 +455,13 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Statutory GST Tax Audit',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      const Expanded(
+                        child: Text(
+                          'Statutory GST Tax Audit',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
@@ -537,34 +542,38 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
                   ),
                 ],
               ),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Center(
-                child: _isGeneratingPdf
-                    ? const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                          ),
-                          SizedBox(width: 12),
-                          Text(
-                            'Synthesizing Official PDF...',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                        ],
-                      )
-                    : const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-                          SizedBox(width: 10),
-                          Text(
-                            'Generate & Print GST PDF Report',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                        ],
-                      ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: _isGeneratingPdf
+                      ? const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                            ),
+                            SizedBox(width: 12),
+                            Text(
+                              'Synthesizing Official PDF...',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                          ],
+                        )
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
+                            SizedBox(width: 10),
+                            Text(
+                              'Generate & Print GST PDF Report',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                          ],
+                        ),
+                ),
               ),
             ),
           ),
@@ -657,13 +666,16 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: fontSize,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: fontSize,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              ),
             ),
           ),
+          const SizedBox(width: 8),
           Text(
             value,
             style: TextStyle(

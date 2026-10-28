@@ -1050,11 +1050,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildHistoryStatCol(stat1Label, '₹${totalRevenue.toStringAsFixed(0)}', CulinaryColors.flameOrange),
+              Expanded(child: _buildHistoryStatCol(stat1Label, '₹${totalRevenue.toStringAsFixed(0)}', CulinaryColors.flameOrange)),
               Container(width: 1, height: 24, color: theme.colorScheme.outlineVariant.withOpacity(0.4)),
-              _buildHistoryStatCol(stat2Label, '₹${statAverage.toStringAsFixed(0)}', CulinaryColors.royalBlue),
+              Expanded(child: _buildHistoryStatCol(stat2Label, '₹${statAverage.toStringAsFixed(0)}', CulinaryColors.royalBlue)),
               Container(width: 1, height: 24, color: theme.colorScheme.outlineVariant.withOpacity(0.4)),
-              _buildHistoryStatCol('Settled Bills', '$totalBills paid', CulinaryColors.emeraldGreen),
+              Expanded(child: _buildHistoryStatCol('Settled Bills', '$totalBills paid', CulinaryColors.emeraldGreen)),
             ],
           ),
         ),
@@ -1163,14 +1163,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w600),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            title,
+            maxLines: 1,
+            style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w600),
+          ),
         ),
         const SizedBox(height: 1),
-        Text(
-          value,
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: color),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            value,
+            maxLines: 1,
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: color),
+          ),
         ),
       ],
     );

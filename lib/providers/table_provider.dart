@@ -74,8 +74,8 @@ class TableProvider extends ChangeNotifier {
     if (index >= 0) {
       _tables[index] = _tables[index].copyWith(
         status: TableStatus.available,
-        activeOrderId: null,
-        occupiedSince: null,
+        clearActiveOrder: true,
+        clearOccupiedSince: true,
         currentBillPaise: 0,
       );
       _persist();
@@ -97,8 +97,8 @@ class TableProvider extends ChangeNotifier {
       );
       _tables[fromIdx] = _tables[fromIdx].copyWith(
         status: TableStatus.available,
-        activeOrderId: null,
-        occupiedSince: null,
+        clearActiveOrder: true,
+        clearOccupiedSince: true,
         currentBillPaise: 0,
       );
       _persist();

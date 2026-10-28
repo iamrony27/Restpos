@@ -296,32 +296,41 @@ class _DeveloperSupportSectionState extends State<DeveloperSupportSection> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.black87,
-                            borderRadius: BorderRadius.circular(10),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.black87,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.code_rounded, color: Colors.white, size: 20),
                           ),
-                          child: const Icon(Icons.code_rounded, color: Colors.white, size: 20),
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Restpos Open Source',
-                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Restpos Open Source',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                                ),
+                                Text(
+                                  'GitHub: iamrony27/Restpos',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
+                                ),
+                              ],
                             ),
-                            Text(
-                              'GitHub: iamrony27/Restpos',
-                              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
-                            ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     IconButton(
                       tooltip: 'Open Repository',
                       icon: const Icon(Icons.open_in_new_rounded, size: 18),
@@ -451,21 +460,28 @@ class _DeveloperSupportSectionState extends State<DeveloperSupportSection> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Row(
-                            children: [
-                              Icon(Icons.currency_rupee_rounded, size: 18, color: CulinaryColors.flameOrange),
-                              SizedBox(width: 6),
-                              Text('UPI ID: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                              Text(
-                                upiId,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 12.5,
-                                  color: CulinaryColors.flameOrange,
+                          const Expanded(
+                            child: Row(
+                              children: [
+                                Icon(Icons.currency_rupee_rounded, size: 18, color: CulinaryColors.flameOrange),
+                                SizedBox(width: 6),
+                                Text('UPI ID: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                Flexible(
+                                  child: Text(
+                                    upiId,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 12.5,
+                                      color: CulinaryColors.flameOrange,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 8),
                           IconButton(
                             tooltip: 'Copy UPI ID',
                             icon: const Icon(Icons.copy_rounded, size: 18),
