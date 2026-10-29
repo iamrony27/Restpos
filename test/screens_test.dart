@@ -163,6 +163,9 @@ void main() {
     expect(find.text('FSSAI Food Safety License'), findsOneWidget);
     expect(find.text('Restaurant Profile'), findsOneWidget);
     expect(find.text('Material 3 Dark Theme'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Rest POS v1.0.1'), 500);
+    expect(find.text('Rest POS v1.0.1'), findsOneWidget);
+    expect(find.text('Build 2'), findsOneWidget);
 
     // Toggle dark theme switch specifically
     final darkThemeTile = find.widgetWithText(ListTile, 'Material 3 Dark Theme');
