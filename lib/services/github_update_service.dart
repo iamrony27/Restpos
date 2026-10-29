@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import '../core/constants/app_version.dart';
 
 class UpdateInfo {
   final bool isUpdateAvailable;
@@ -24,7 +25,7 @@ class UpdateInfo {
 }
 
 class GitHubUpdateService {
-  static const String currentVersion = 'v1.0.0';
+  static const String currentVersion = AppVersion.tag;
   static const String repoOwner = 'iamrony27';
   static const String repoName = 'Restpos';
   static const String repoUrl = 'https://github.com/iamrony27/Restpos';
@@ -45,7 +46,7 @@ class GitHubUpdateService {
         final body = await response.transform(utf8.decoder).join();
         final data = jsonDecode(body) as Map<String, dynamic>;
 
-        final tagName = data['tag_name']?.toString() ?? 'v1.0.0';
+        final tagName = data['tag_name']?.toString() ?? currentVersion;
         final htmlUrl = data['html_url']?.toString() ?? repoUrl;
         final notes = data['body']?.toString() ?? 'No release notes provided.';
         final published = data['published_at']?.toString();
@@ -68,14 +69,14 @@ class GitHubUpdateService {
         return UpdateInfo(
           isUpdateAvailable: isNewer,
           currentVersion: currentVersion,
-          latestVersion: tagName,
-          releaseNotes: notes,
+          latestVersion: tagName.isNotEmpty ? tagName : currentVersion,
+          releaseNotes: isNewer ? notes : null,
           downloadUrl: downloadUrl,
           publishedAt: published,
           repoUrl: repoUrl,
           statusMessage: isNewer
               ? 'A newer version ($tagName) is available on GitHub!'
-              : 'You are on the latest release ($currentVersion)!',
+              : 'You are on the latest version ($currentVersion)! Everything is up to date.',
         );
       } else if (response.statusCode == 404) {
         // No release tag created yet on GitHub repo
@@ -84,7 +85,7 @@ class GitHubUpdateService {
           currentVersion: currentVersion,
           latestVersion: currentVersion,
           repoUrl: repoUrl,
-          statusMessage: 'You are on the latest open-source build! No new releases published yet on GitHub.',
+          statusMessage: 'You are on the latest version ($currentVersion)! Everything is up to date.',
         );
       } else {
         return const UpdateInfo(
@@ -92,7 +93,7 @@ class GitHubUpdateService {
           currentVersion: currentVersion,
           latestVersion: currentVersion,
           repoUrl: repoUrl,
-          statusMessage: 'GitHub is currently unreachable. You are running the official build.',
+          statusMessage: 'You are running the official version ($currentVersion).',
         );
       }
     } catch (e) {
@@ -101,7 +102,7 @@ class GitHubUpdateService {
         currentVersion: currentVersion,
         latestVersion: currentVersion,
         repoUrl: repoUrl,
-        statusMessage: 'Offline or network timeout. Current build: $currentVersion.',
+        statusMessage: 'Offline or network unavailable. Current version: $currentVersion.',
       );
     }
   }

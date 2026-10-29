@@ -19,6 +19,8 @@ import 'package:flutter_restaurant_pos/core/utils/upi_helper.dart';
 import 'package:flutter_restaurant_pos/services/report_pdf_service.dart';
 import 'package:flutter_restaurant_pos/services/backup_restore_service.dart';
 import 'package:flutter_restaurant_pos/services/local_storage_service.dart';
+import 'package:flutter_restaurant_pos/core/constants/app_version.dart';
+import 'package:flutter_restaurant_pos/services/github_update_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -554,6 +556,17 @@ void main() {
       expect(orderProvider.itemsSoldToday, equals(2));
       expect(orderProvider.totalRevenueRupees, equals(525.0)); // 500 + 5% GST = 525
       expect(orderProvider.paymentDistribution[PaymentMethod.cash], equals(525.0));
+    });
+  });
+
+  group('GitHubUpdateService & AppVersion Alignment', () {
+    test('GitHubUpdateService currentVersion matches AppVersion.tag', () {
+      expect(GitHubUpdateService.currentVersion, equals(AppVersion.tag));
+      expect(AppVersion.version, equals('1.0.2'));
+      expect(AppVersion.buildNumber, equals(3));
+      expect(AppVersion.tag, equals('v1.0.2'));
+      expect(AppVersion.fullDisplay, equals('Rest POS v1.0.2'));
+      expect(AppVersion.buildDisplay, equals('Build 3'));
     });
   });
 }

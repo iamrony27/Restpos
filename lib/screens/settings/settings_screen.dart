@@ -14,6 +14,7 @@ import '../setup/setup_wizard_screen.dart';
 import '../../widgets/developer_support_section.dart';
 import '../../widgets/thermal_slip_preview_dialog.dart';
 import '../../core/utils/app_notification.dart';
+import '../../core/constants/app_version.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -1242,7 +1243,7 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Rest POS v1.0.2',
+                      AppVersion.fullDisplay,
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 13,
@@ -1258,7 +1259,7 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Text(
-                        'Build 3',
+                        AppVersion.buildDisplay,
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,

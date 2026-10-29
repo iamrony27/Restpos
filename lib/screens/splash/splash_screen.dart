@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/color_schemes.dart';
+import '../../core/constants/app_version.dart';
 import '../../providers/menu_provider.dart';
 import '../../providers/order_provider.dart';
 import '../../providers/pos_provider.dart';
@@ -285,7 +286,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 child: Column(
                   children: [
                     Text(
-                      'v1.0.0 (Production Ready)',
+                      AppVersion.splashDisplay,
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
