@@ -477,6 +477,46 @@ void main() {
       expect(restored.orders.length, equals(1));
       expect(restored.orders.first.orderNumber, equals('ORD-0001'));
     });
+
+    test('BackupRestoreService exports to and imports from SharedPreferences mirror seamlessly', () async {
+      SharedPreferences.setMockInitialValues({});
+      const profile = RestaurantProfile(name: 'SharedPreferences Cafe', gstin: '27ABCDE1234F1Z5');
+      final categories = [const MenuCategory(id: 1, name: 'Main', sortOrder: 1)];
+      final items = [const MenuItem(id: 101, categoryId: 1, name: 'Paneer Butter Masala', pricePaise: 24000)];
+      final tables = [const RestaurantTable(id: 1, name: 'Table 1', seatingCapacity: 4)];
+      final orders = <Order>[];
+
+      await BackupRestoreService.exportBackup(
+        profile: profile,
+        categories: categories,
+        items: items,
+        tables: tables,
+        orders: orders,
+      );
+
+      // Verify SharedPreferences mirror
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(BackupRestoreService.prefKeyBackupJson), isNotNull);
+      expect(prefs.getString(BackupRestoreService.prefKeyBackupJson), contains('SharedPreferences Cafe'));
+
+      // Verify hasExistingBackup returns true
+      final hasBackup = await BackupRestoreService.hasExistingBackup();
+      expect(hasBackup, isTrue);
+
+      // Verify getExistingBackupInfo returns parsed metadata
+      final info = await BackupRestoreService.getExistingBackupInfo();
+      expect(info, isNotNull);
+      expect(info!.restaurantName, equals('SharedPreferences Cafe'));
+      expect(info.dishCount, equals(1));
+      expect(info.categoryCount, equals(1));
+      expect(info.tableCount, equals(1));
+
+      // Verify importBackup returns correct data
+      final restored = await BackupRestoreService.importBackup();
+      expect(restored, isNotNull);
+      expect(restored!.profile.name, equals('SharedPreferences Cafe'));
+      expect(restored.items.first.name, equals('Paneer Butter Masala'));
+    });
   });
 
   group('OrderProvider Completed Orders vs Active Unpaid Orders', () {

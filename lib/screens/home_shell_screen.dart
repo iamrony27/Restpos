@@ -56,6 +56,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final isTablet = MediaQuery.of(context).size.width >= 720;
 
     final screens = [
@@ -66,7 +67,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
       const OrdersScreen(),
       SettingsScreen(
         onToggleTheme: widget.onToggleTheme,
-        isDarkMode: widget.isDarkMode,
+        isDarkMode: isDark,
       ),
     ];
 
@@ -169,7 +170,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                       borderRadius: BorderRadius.circular(34),
                       boxShadow: [
                         BoxShadow(
-                          color: widget.isDarkMode
+                          color: isDark
                               ? Colors.black.withOpacity(0.55)
                               : const Color(0xFF2E1A11).withOpacity(0.25),
                           blurRadius: 28,
@@ -188,7 +189,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
                         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                         child: Container(
                           decoration: BoxDecoration(
-                            color: widget.isDarkMode
+                            color: isDark
                                 ? const Color(0xFF141210).withOpacity(0.92)
                                 : const Color(0xFF261D19).withOpacity(0.94),
                             borderRadius: BorderRadius.circular(34),
@@ -274,7 +275,8 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
 
   Widget _buildCenterAddButton() {
     final isPosSelected = _currentIndex == 1;
-    final haloColor = widget.isDarkMode ? const Color(0xFF141210) : const Color(0xFF261D19);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final haloColor = isDark ? const Color(0xFF141210) : const Color(0xFF261D19);
 
     return GestureDetector(
       onTap: () => _onTabSelected(1),

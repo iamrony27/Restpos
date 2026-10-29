@@ -325,19 +325,42 @@ class MainActivity : FlutterActivity() {
                     try {
                         var written = false
 
+                        // 1. Write to App-Specific External Files Dir (guaranteed read/write without permissions)
+                        try {
+                            val extFilesDir = context.getExternalFilesDir(null)
+                            if (extFilesDir != null) {
+                                val extFile = File(extFilesDir, fileName)
+                                extFile.writeText(jsonContent, Charsets.UTF_8)
+                            }
+                        } catch (_: Exception) {}
+
+                        // 2. Write to Internal App Files Dir (guaranteed private storage)
+                        try {
+                            val intFile = File(context.filesDir, fileName)
+                            intFile.writeText(jsonContent, Charsets.UTF_8)
+                        } catch (_: Exception) {}
+
+                        // 3. Write via Android MediaStore Downloads for Scoped Storage compliance
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-                            val projection = arrayOf(MediaStore.Downloads._ID)
-                            val selection = "${MediaStore.Downloads.DISPLAY_NAME} = ? AND ${MediaStore.Downloads.RELATIVE_PATH} LIKE ?"
-                            val selectionArgs = arrayOf(fileName, "%RestPos%")
+                            val projection = arrayOf(MediaStore.Downloads._ID, MediaStore.Downloads.RELATIVE_PATH)
+                            val selection = "${MediaStore.Downloads.DISPLAY_NAME} = ?"
+                            val selectionArgs = arrayOf(fileName)
 
                             var existingId: Long? = null
-                            contentResolver.query(collection, projection, selection, selectionArgs, null)?.use { cursor ->
-                                if (cursor.moveToFirst()) {
+                            try {
+                                contentResolver.query(collection, projection, selection, selectionArgs, null)?.use { cursor ->
                                     val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Downloads._ID)
-                                    existingId = cursor.getLong(idColumn)
+                                    val relPathColumn = cursor.getColumnIndex(MediaStore.Downloads.RELATIVE_PATH)
+                                    while (cursor.moveToNext()) {
+                                        val relPath = if (relPathColumn >= 0) cursor.getString(relPathColumn) ?: "" else ""
+                                        if (relPath.contains("RestPos", ignoreCase = true) || existingId == null) {
+                                            existingId = cursor.getLong(idColumn)
+                                            if (relPath.contains("RestPos", ignoreCase = true)) break
+                                        }
+                                    }
                                 }
-                            }
+                            } catch (_: Exception) {}
 
                             if (existingId != null) {
                                 val existingUri = Uri.withAppendedPath(collection, existingId.toString())
@@ -376,13 +399,14 @@ class MainActivity : FlutterActivity() {
                             }
                         }
 
-                        if (!written) {
+                        // 4. Also write to direct public Download/RestPos
+                        try {
                             val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "RestPos")
                             if (!dir.exists()) dir.mkdirs()
                             val file = File(dir, fileName)
                             file.writeText(jsonContent, Charsets.UTF_8)
                             written = true
-                        }
+                        } catch (_: Exception) {}
 
                         val resultPath = "/storage/emulated/0/${Environment.DIRECTORY_DOWNLOADS}/RestPos/$fileName"
                         result.success(mapOf(
@@ -399,33 +423,83 @@ class MainActivity : FlutterActivity() {
                     try {
                         var foundJson: String? = null
 
+                        // 1. Try MediaStore Downloads
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                            val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-                            val projection = arrayOf(MediaStore.Downloads._ID)
-                            val selection = "${MediaStore.Downloads.DISPLAY_NAME} = ? AND ${MediaStore.Downloads.RELATIVE_PATH} LIKE ?"
-                            val selectionArgs = arrayOf(fileName, "%RestPos%")
+                            try {
+                                val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                                val projection = arrayOf(MediaStore.Downloads._ID, MediaStore.Downloads.RELATIVE_PATH)
+                                val selection = "${MediaStore.Downloads.DISPLAY_NAME} = ?"
+                                val selectionArgs = arrayOf(fileName)
+                                val sortOrder = "${MediaStore.Downloads._ID} DESC"
 
-                            contentResolver.query(collection, projection, selection, selectionArgs, null)?.use { cursor ->
-                                if (cursor.moveToFirst()) {
+                                contentResolver.query(collection, projection, selection, selectionArgs, sortOrder)?.use { cursor ->
                                     val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Downloads._ID)
-                                    val id = cursor.getLong(idColumn)
-                                    val uri = Uri.withAppendedPath(collection, id.toString())
-                                    try {
-                                        contentResolver.openInputStream(uri)?.use { input ->
-                                            foundJson = input.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                                    val relPathColumn = cursor.getColumnIndex(MediaStore.Downloads.RELATIVE_PATH)
+
+                                    while (cursor.moveToNext()) {
+                                        val relPath = if (relPathColumn >= 0) cursor.getString(relPathColumn) ?: "" else ""
+                                        if (relPath.contains("RestPos", ignoreCase = true) || foundJson == null) {
+                                            val id = cursor.getLong(idColumn)
+                                            val uri = Uri.withAppendedPath(collection, id.toString())
+                                            try {
+                                                contentResolver.openInputStream(uri)?.use { input ->
+                                                    val text = input.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                                                    if (text.isNotBlank()) {
+                                                        foundJson = text
+                                                    }
+                                                }
+                                            } catch (_: Exception) {}
+                                            if (foundJson != null && relPath.contains("RestPos", ignoreCase = true)) {
+                                                break
+                                            }
                                         }
-                                    } catch (_: Exception) {}
+                                    }
                                 }
-                            }
+                            } catch (_: Exception) {}
                         }
 
+                        // 2. Check App External Files Dir
                         if (foundJson == null) {
-                            // Check filesystem fallback
-                            val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "RestPos")
-                            val file = File(dir, fileName)
-                            if (file.exists()) {
-                                foundJson = file.readText(Charsets.UTF_8)
-                            }
+                            try {
+                                val extFilesDir = context.getExternalFilesDir(null)
+                                if (extFilesDir != null) {
+                                    val extFile = File(extFilesDir, fileName)
+                                    if (extFile.exists() && extFile.length() > 0) {
+                                        foundJson = extFile.readText(Charsets.UTF_8)
+                                    }
+                                }
+                            } catch (_: Exception) {}
+                        }
+
+                        // 3. Check App Internal Files Dir
+                        if (foundJson == null) {
+                            try {
+                                val intFile = File(context.filesDir, fileName)
+                                if (intFile.exists() && intFile.length() > 0) {
+                                    foundJson = intFile.readText(Charsets.UTF_8)
+                                }
+                            } catch (_: Exception) {}
+                        }
+
+                        // 4. Check Public Download/RestPos
+                        if (foundJson == null) {
+                            try {
+                                val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "RestPos")
+                                val file = File(dir, fileName)
+                                if (file.exists() && file.length() > 0) {
+                                    foundJson = file.readText(Charsets.UTF_8)
+                                }
+                            } catch (_: Exception) {}
+                        }
+
+                        // 5. Check Root /storage/emulated/0/RestPos
+                        if (foundJson == null) {
+                            try {
+                                val file = File("/storage/emulated/0/RestPos/$fileName")
+                                if (file.exists() && file.length() > 0) {
+                                    foundJson = file.readText(Charsets.UTF_8)
+                                }
+                            } catch (_: Exception) {}
                         }
 
                         result.success(foundJson)

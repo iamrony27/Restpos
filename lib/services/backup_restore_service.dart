@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../core/channels/native_api_channel.dart';
 import '../models/menu_category.dart';
 import '../models/menu_item.dart';
@@ -77,6 +78,20 @@ class BackupData {
 }
 
 class BackupRestoreService {
+  static const String prefKeyBackupJson = 'restpos_persisted_backup_json';
+  static const String prefKeyBackupTime = 'restpos_persisted_backup_time';
+  static const String prefKeyBackupSize = 'restpos_persisted_backup_size';
+
+  static List<String> get candidateFilePaths => const [
+    '/storage/emulated/0/Download/RestPos/restpos_backup.json',
+    '/storage/emulated/0/Android/data/com.restaurantpos.flutter_restaurant_pos/files/restpos_backup.json',
+    '/data/user/0/com.restaurantpos.flutter_restaurant_pos/files/restpos_backup.json',
+    '/data/user/0/com.restaurantpos.flutter_restaurant_pos/cache/RestPos/restpos_backup.json',
+    '/storage/emulated/0/RestPos/restpos_backup.json',
+    '/storage/emulated/0/Documents/RestPos/restpos_backup.json',
+    '/storage/emulated/0/Download/spice_garden_pos_backup.json',
+  ];
+
   /// Base directory for permanent backups in RestPos folder
   /// Preserved even if the app is uninstalled/reinstalled
   static Future<Directory> getBackupDirectory() async {
@@ -121,7 +136,7 @@ class BackupRestoreService {
     return '${dir.path}/restpos_backup.json';
   }
 
-  /// Exports current database state to the RestPos folder, overwriting previous backup
+  /// Exports current database state across all storage tiers, overwriting previous backup
   static Future<File> exportBackup({
     required RestaurantProfile profile,
     required List<MenuCategory> categories,
@@ -140,52 +155,80 @@ class BackupRestoreService {
     );
 
     final jsonStr = backup.toJsonString();
+    final byteLength = utf8.encode(jsonStr).length;
 
-    // 1. Primary: Save via Native Android MediaStore (Scoped Storage compliant)
-    // Writes to /storage/emulated/0/Download/RestPos/restpos_backup.json and overwrites cleanly.
-    // Preserved even if app is uninstalled.
+    // Tier 1: Persist backup mirror to SharedPreferences (guaranteed immunity to storage permissions)
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(prefKeyBackupJson, jsonStr);
+      await prefs.setString(prefKeyBackupTime, backup.exportedAt);
+      await prefs.setInt(prefKeyBackupSize, byteLength);
+    } catch (_) {}
+
+    // Tier 2: Write to App-specific internal & external file paths
+    try {
+      final internalDir = Directory('/data/user/0/com.restaurantpos.flutter_restaurant_pos/files');
+      if (!internalDir.existsSync()) internalDir.createSync(recursive: true);
+      final internalFile = File('${internalDir.path}/restpos_backup.json');
+      await internalFile.writeAsString(jsonStr, mode: FileMode.write, flush: true);
+    } catch (_) {}
+
+    try {
+      final cacheDir = Directory('/data/user/0/com.restaurantpos.flutter_restaurant_pos/cache/RestPos');
+      if (!cacheDir.existsSync()) cacheDir.createSync(recursive: true);
+      final cacheFile = File('${cacheDir.path}/restpos_backup.json');
+      await cacheFile.writeAsString(jsonStr, mode: FileMode.write, flush: true);
+    } catch (_) {}
+
+    try {
+      final extFilesDir = Directory('/storage/emulated/0/Android/data/com.restaurantpos.flutter_restaurant_pos/files');
+      if (!extFilesDir.existsSync()) extFilesDir.createSync(recursive: true);
+      final extFile = File('${extFilesDir.path}/restpos_backup.json');
+      await extFile.writeAsString(jsonStr, mode: FileMode.write, flush: true);
+    } catch (_) {}
+
+    // Tier 3: Save via Native Android MediaStore (Scoped Storage compliant for Download/RestPos)
     try {
       final nativePath = await NativeApiChannel.saveBackupToRestPos(jsonStr);
       if (nativePath != null && nativePath.isNotEmpty) {
-        return File(nativePath);
+        final f = File(nativePath);
+        if (f.existsSync()) return f;
       }
     } catch (e) {
       // ignore: avoid_print
       print('Native saveBackupToRestPos fallback triggered: $e');
     }
 
-    // 2. Direct File write fallback
-    final path = await getBackupFilePath();
-    final file = File(path);
-    if (!file.parent.existsSync()) {
-      file.parent.createSync(recursive: true);
-    }
+    // Tier 4: Direct File write fallback
+    try {
+      final path = await getBackupFilePath();
+      final file = File(path);
+      if (!file.parent.existsSync()) {
+        file.parent.createSync(recursive: true);
+      }
+      await file.writeAsString(jsonStr, mode: FileMode.write, flush: true);
+      return file;
+    } catch (_) {}
 
-    // Write file - overwriting any existing backup file atomically
-    await file.writeAsString(jsonStr, mode: FileMode.write, flush: true);
-    return file;
+    return File('/data/user/0/com.restaurantpos.flutter_restaurant_pos/files/restpos_backup.json');
   }
 
-  /// Checks if a backup file exists in RestPos folder or legacy locations
+  /// Checks if a backup file exists in any of the candidate file locations
   static Future<File?> findExistingBackupFile() async {
-    // 1. Check primary RestPos file
-    final primaryPath = await getBackupFilePath();
-    final primaryFile = File(primaryPath);
-    if (primaryFile.existsSync()) return primaryFile;
-
-    // 2. Check legacy root RestPos
-    final rootFile = File('/storage/emulated/0/RestPos/restpos_backup.json');
-    if (rootFile.existsSync()) return rootFile;
-
-    // 3. Check legacy download file
-    final legacyFile = File('/storage/emulated/0/Download/spice_garden_pos_backup.json');
-    if (legacyFile.existsSync()) return legacyFile;
-
+    for (final path in candidateFilePaths) {
+      try {
+        final f = File(path);
+        if (f.existsSync() && f.lengthSync() > 0) {
+          return f;
+        }
+      } catch (_) {}
+    }
     return null;
   }
 
-  /// Checks if a backup file exists on device
+  /// Checks if a backup file exists on device or in persistent mirror
   static Future<bool> hasExistingBackup() async {
+    // 1. Native MediaStore / Native File read
     try {
       final nativeContent = await NativeApiChannel.readBackupFromRestPos();
       if (nativeContent != null && nativeContent.trim().isNotEmpty) {
@@ -193,13 +236,25 @@ class BackupRestoreService {
       }
     } catch (_) {}
 
+    // 2. Direct File candidates
     final file = await findExistingBackupFile();
-    return file != null;
+    if (file != null) return true;
+
+    // 3. SharedPreferences mirror
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final prefJson = prefs.getString(prefKeyBackupJson);
+      if (prefJson != null && prefJson.trim().isNotEmpty) {
+        return true;
+      }
+    } catch (_) {}
+
+    return false;
   }
 
-  /// Imports and parses backup data from the RestPos backup file
+  /// Imports and parses backup data from Native, Filesystem, or SharedPreferences mirror
   static Future<BackupData?> importBackup() async {
-    // 1. Primary: Read via Native Android MediaStore (Scoped Storage compliant)
+    // 1. Primary: Read via Native Android MediaStore & native storage
     try {
       final nativeContent = await NativeApiChannel.readBackupFromRestPos();
       if (nativeContent != null && nativeContent.trim().isNotEmpty) {
@@ -212,10 +267,25 @@ class BackupRestoreService {
 
     // 2. Fallback to direct file read
     final file = await findExistingBackupFile();
-    if (file == null || !file.existsSync()) return null;
+    if (file != null && file.existsSync()) {
+      try {
+        final content = await file.readAsString();
+        if (content.trim().isNotEmpty) {
+          return BackupData.fromJsonString(content);
+        }
+      } catch (_) {}
+    }
 
-    final content = await file.readAsString();
-    return BackupData.fromJsonString(content);
+    // 3. Fallback to SharedPreferences mirror
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final prefJson = prefs.getString(prefKeyBackupJson);
+      if (prefJson != null && prefJson.trim().isNotEmpty) {
+        return BackupData.fromJsonString(prefJson);
+      }
+    } catch (_) {}
+
+    return null;
   }
 
   /// Inspects and retrieves detailed metadata (file size, timestamp, counts) of the existing backup
@@ -240,6 +310,18 @@ class BackupRestoreService {
           size = file.lengthSync();
         } catch (_) {}
       }
+    }
+
+    // 3. SharedPreferences mirror fallback if content is null
+    if (content == null || content.trim().isEmpty) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final prefJson = prefs.getString(prefKeyBackupJson);
+        if (prefJson != null && prefJson.trim().isNotEmpty) {
+          content = prefJson;
+          size = prefs.getInt(prefKeyBackupSize) ?? utf8.encode(prefJson).length;
+        }
+      } catch (_) {}
     }
 
     if (content == null || content.trim().isEmpty) return null;

@@ -1211,7 +1211,7 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
               title: const Text('Material 3 Dark Theme', style: TextStyle(fontWeight: FontWeight.w600)),
               subtitle: const Text('Switch between light and dark Material 3 palette'),
               trailing: Switch(
-                value: widget.isDarkMode,
+                value: Theme.of(context).brightness == Brightness.dark,
                 onChanged: (_) => widget.onToggleTheme(),
               ),
             ),
@@ -1242,7 +1242,7 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Rest POS v1.0.1',
+                      'Rest POS v1.0.2',
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 13,
@@ -1258,7 +1258,7 @@ Status: ${_printerConnected ? "ONLINE & READY" : "PREVIEW SIMULATION"}
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Text(
-                        'Build 2',
+                        'Build 3',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
